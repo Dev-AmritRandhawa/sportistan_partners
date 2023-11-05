@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>436804614364-rgqtigo1174ud5uf2nr1allp08tn9mh2.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.436804614364-rgqtigo1174ud5uf2nr1allp08tn9mh2</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>436804614364-kagqadaqhutottfa24t3o1jhqjumn9ug.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCawcMSBk1bab3l7xzbYNjapnlPQj_j1XI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>436804614364</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>co.in.sportistan.sportistanPartners</string>
+	<key>PROJECT_ID</key>
+	<string>sportistanproject</string>
+	<key>STORAGE_BUCKET</key>
+	<string>sportistanproject.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:436804614364:ios:2a24535de6c9b45fce9c19</string>
+</dict>
+</plist>
