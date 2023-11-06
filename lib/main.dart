@@ -61,11 +61,9 @@ Future<void> requestPermission() async {
 
 Future<void> registerFCM() async {
   String? token = await messaging.getToken();
-  if(token != null){
-    Notifications.init();
-    await FirebaseMessaging.instance.setAutoInitEnabled(true);
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  }
+  Notifications.init();
+  await FirebaseMessaging.instance.setAutoInitEnabled(true);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
 }
 

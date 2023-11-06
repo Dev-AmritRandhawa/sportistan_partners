@@ -53,7 +53,6 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _futureGroundTypes() async {
-
     _server
         .collection("SportistanPartners")
         .where("userID", isEqualTo: _auth.currentUser!.uid)
@@ -84,34 +83,35 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> collectBookings() async {
-    try{
+    try {
       DateTime now = DateTime.now();
       await _server
           .collection("GroundBookings")
           .where("bookingCreated",
-          isLessThanOrEqualTo:
-          DateTime(now.year, now.month, now.day)
-              .add(const Duration(days: 30)))
-          .where('userID', isEqualTo: _auth.currentUser!.uid).where("isBookingCancelled", isEqualTo: false).get()
+              isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
+                  .add(const Duration(days: 30)))
+          .where('userID', isEqualTo: _auth.currentUser!.uid)
+          .where("isBookingCancelled", isEqualTo: false)
+          .get()
           .then((value) => {
-        bookingElements = value.docs,
-        if (value.docs.isNotEmpty)
-          {
-            for (int i = 0; i < bookingElements.length; i++)
-              {
-                bookingList.add(bookingElements[i]["slotID"] +
-                    bookingElements[i]["date"]),
-                checkEntireDayAvailability.add(bookingElements[i]["date"])
-              },
-            getAllSlots()
-          }
-        else
-          {getAllSlots()},
-      });
-    }catch(error){
+                bookingElements = value.docs,
+                if (value.docs.isNotEmpty)
+                  {
+                    for (int i = 0; i < bookingElements.length; i++)
+                      {
+                        bookingList.add(bookingElements[i]["slotID"] +
+                            bookingElements[i]["date"]),
+                        checkEntireDayAvailability
+                            .add(bookingElements[i]["date"])
+                      },
+                    getAllSlots()
+                  }
+                else
+                  {getAllSlots()},
+              });
+    } catch (error) {
       getAllSlots();
     }
-
   }
 
   @override
@@ -461,13 +461,14 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> collectBookingsWithFilter(DateTime now) async {
-     await _server
+    await _server
         .collection("GroundBookings")
         .where("bookingCreated",
-        isLessThanOrEqualTo:
-        DateTime(now.year, now.month, now.day)
-            .add(const Duration(days: 30)))
-        .where('userID', isEqualTo: _auth.currentUser!.uid).where("isBookingCancelled", isEqualTo: false).get()
+            isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
+                .add(const Duration(days: 30)))
+        .where('userID', isEqualTo: _auth.currentUser!.uid)
+        .where("isBookingCancelled", isEqualTo: false)
+        .get()
         .then((value) => {
               bookingElements = value.docs,
               if (value.docs.isNotEmpty)
@@ -806,7 +807,8 @@ class _HomeState extends State<Home> {
                                           PageRouter.push(
                                               context,
                                               BookEntireDay(
-                                                date: group, groundID: groundID[groundIndex],
+                                                date: group,
+                                                groundID: groundID[groundIndex],
                                               ));
                                         },
                                         child: const Text(
@@ -836,8 +838,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
-
 }
 
 class MyBookings {
