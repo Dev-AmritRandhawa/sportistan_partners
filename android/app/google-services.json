@@ -1,40 +1,48 @@
 {
   "project_info": {
-    "project_number": "436804614364",
-    "project_id": "sportistanproject",
-    "storage_bucket": "sportistanproject.appspot.com"
+    "project_number": "497512590176",
+    "project_id": "isportistan",
+    "storage_bucket": "isportistan.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:436804614364:android:e7d8ca81aea0535fce9c19",
+        "mobilesdk_app_id": "1:497512590176:android:994971cae139f184960c05",
         "android_client_info": {
           "package_name": "co.in.sportistan.sportistan_partners"
         }
       },
       "oauth_client": [
         {
-          "client_id": "436804614364-dsf62l0l50r3k2opch7m78b3ddmju0b2.apps.googleusercontent.com",
+          "client_id": "497512590176-9qp4ib3l1pui3jqkpuuetllm9n0tra76.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.in.sportistan.sportistan_partners",
+            "certificate_hash": "8409cbe37afad5353e3a899834bef0b7191b62b5"
+          }
+        },
+        {
+          "client_id": "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAi7FFZyb9Ci_UbSXF22k071fWrmbiL5eU"
+          "current_key": "AIzaSyBeA3I5eNJkbzwRPc8cU1iDy50BrkcSPGM"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "100473162886811688440",
+              "client_id": "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "436804614364-qn5cpccnrmrh19p55suboke0qo98k82t.apps.googleusercontent.com",
+              "client_id": "497512590176-s81siviqc00co384piud109u1p19cqud.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "sportistan.co.in.sportistan"
+                "bundle_id": "co.in.sportistan.sportistanPartners"
               }
             }
           ]

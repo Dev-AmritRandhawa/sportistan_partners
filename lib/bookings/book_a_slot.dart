@@ -13,7 +13,7 @@ import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/nav_bar/booking_info.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
-
+import 'package:http/http.dart' as http;
 import '../payments/payment_mode.dart';
 
 class BookASlot extends StatefulWidget {
@@ -22,11 +22,10 @@ class BookASlot extends StatefulWidget {
   final String slotID;
   final String bookingID;
   final String date;
-  final List<String> groundName;
-  final List<String> groundID;
-  final List<String> groundAddress;
+  final String groundID;
+  final String groundName;
+  final String groundAddress;
   final int slotPrice;
-  final int groundIndex;
   final String slotTime;
   final String slotStatus;
 
@@ -39,7 +38,6 @@ class BookASlot extends StatefulWidget {
     required this.slotTime,
     required this.slotStatus,
     required this.slotPrice,
-    required this.groundIndex,
     required this.groundName,
     required this.groundID,
     required this.groundAddress,
@@ -81,12 +79,12 @@ class _BookASlotState extends State<BookASlot> {
 
   late int updatedPrice;
 
+  bool updateSmsAlert = false;
+
   Future<void> serverInit() async {
     if (widget.bookingID.isNotEmpty) {
       await _server
-          .collection("SportistanPartnersProfile")
-          .doc(_auth.currentUser!.uid)
-          .collection("Bookings")
+          .collection("GroundBookings")
           .where("bookingID", isEqualTo: widget.bookingID)
           .get()
           .then((value) => {
@@ -149,7 +147,11 @@ class _BookASlotState extends State<BookASlot> {
         _phoneContact = contact;
       });
       if (_phoneContact!.phoneNumber != null) {
-        controller.text = _phoneContact!.phoneNumber!.number!;
+        if (_phoneContact!.phoneNumber!.number!.length > 10) {
+          controller.text = _phoneContact!.phoneNumber!.number!.substring(3);
+        } else {
+          controller.text = _phoneContact!.phoneNumber!.number!;
+        }
       }
     } else {
       requestPermission();
@@ -167,33 +169,28 @@ class _BookASlotState extends State<BookASlot> {
       body: SlidingUpPanel(
         borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-        minHeight: MediaQuery.of(context).size.height / 1.6,
-        maxHeight: MediaQuery.of(context).size.height / 1.6,
+        minHeight: MediaQuery.of(context).size.height / 1.3,
+        maxHeight: MediaQuery.of(context).size.height / 1.2,
         panelBuilder: (sc) => _panel(sc),
         body: SafeArea(
           child: Card(
             child: Column(
               children: [
-                const Icon(Icons.location_on_sharp, color: Colors.green),
-                widget.groundName.isNotEmpty
-                    ? Text(
-                        widget.groundName[widget.groundIndex],
-                        style: TextStyle(
-                            color: Colors.black87,
-                            fontFamily: "Nunito",
-                            fontSize: MediaQuery.of(context).size.width / 25),
-                      )
-                    : const CircularProgressIndicator(strokeWidth: 1),
-                widget.groundName.isNotEmpty
-                    ? Text(
-                        textAlign: TextAlign.center,
-                        widget.groundAddress[widget.groundIndex],
-                        style: TextStyle(
-                            color: Colors.black87,
-                            fontFamily: "Nunito",
-                            fontSize: MediaQuery.of(context).size.width / 25),
-                      )
-                    : const CircularProgressIndicator(strokeWidth: 1),
+                Text(
+                  widget.groundName,
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontFamily: "Nunito",
+                      fontSize: MediaQuery.of(context).size.width / 25),
+                ),
+                Text(
+                  textAlign: TextAlign.center,
+                  widget.groundAddress,
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontFamily: "Nunito",
+                      fontSize: MediaQuery.of(context).size.width / 25),
+                ),
                 Column(
                   children: [
                     Padding(
@@ -233,57 +230,6 @@ class _BookASlotState extends State<BookASlot> {
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      CupertinoButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text(
-                            "Back",
-                            style: TextStyle(color: Colors.red),
-                          )),
-                      CupertinoButton(
-                          color: Colors.green.shade800,
-                          onPressed: () {
-                            if (nameKeyA.currentState!.validate() &
-                                numberKeyA.currentState!.validate() &
-                                teamControllerKeyA.currentState!.validate()) {
-                              if (checkBoxTeamB.value) {
-                                if (nameKeyB.currentState!.validate() &
-                                    numberKeyB.currentState!.validate() &
-                                    teamControllerKeyB.currentState!
-                                        .validate()) {
-                                  if (advancePaymentKey.currentState!
-                                      .validate()) {
-                                    _bookSlot();
-                                  }
-                                } else {
-                                  Errors.flushBarInform(
-                                      "Field Required for Team B*",
-                                      context,
-                                      "Enter field");
-                                }
-                              } else {
-                                if (advancePaymentKey.currentState!
-                                    .validate()) {
-                                  _bookSlot();
-                                }
-                              }
-                            } else {
-                              Errors.flushBarInform(
-                                  "Field Required for Team A*",
-                                  context,
-                                  "Enter field");
-                            }
-                          },
-                          child: const Text("Book Slot")),
-                    ],
-                  ),
-                )
               ],
             ),
           ),
@@ -300,45 +246,88 @@ class _BookASlotState extends State<BookASlot> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: <Widget>[
+              widget.bookingID.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: () {
+                          PageRouter.push(context,
+                              BookingInfo(bookingID: widget.bookingID));
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.bookingID,
+                              style: const TextStyle(color: Colors.green),
+                            ),
+                            TextButton(
+                                onPressed: () {
+                                  PageRouter.push(context,
+                                      BookingInfo(bookingID: widget.bookingID));
+                                },
+                                child: const Text(
+                                  "View Receipt",
+                                  style: TextStyle(color: Colors.black87),
+                                )),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Container(),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: ValueListenableBuilder(
-                    valueListenable: checkBoxTeamB,
-                    builder: (context, value, child) => SizedBox(
-                      width: MediaQuery.of(context).size.width / 2,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CupertinoSwitch(
-                              value: value,
-                              onChanged: (result) {
-                                checkBoxTeamB.value = result;
-                                teamControllerB.text = teamControllerA.value.text;
-                                nameControllerB.text = nameControllerA.value.text;
-                                numberControllerB.text = numberControllerA.value.text;
-                                showTeamB.value = result;
-                                if (result) {
-                                  setState(() {
-                                    int newAmount = updatedPrice;
-                                    priceController.text =
-                                        newAmount.toString();
-                                  });
-                                } else {
-                                  setState(() {
-                                    double newAmount =
-                                        updatedPrice / 2.toInt().round();
-                                    priceController.text =
-                                        newAmount.round().toInt().toString();
-                                  });
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    CupertinoButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Go Back",
+                          style: TextStyle(color: Colors.red),
+                        )),
+                    MaterialButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
+                        color: Colors.green,
+                        onPressed: () {
+                          if (nameKeyA.currentState!.validate() &
+                              numberKeyA.currentState!.validate() &
+                              teamControllerKeyA.currentState!.validate()) {
+                            if (checkBoxTeamB.value) {
+                              if (nameKeyB.currentState!.validate() &
+                                  numberKeyB.currentState!.validate() &
+                                  teamControllerKeyB.currentState!.validate()) {
+                                if (numberControllerA.value.text !=
+                                    numberControllerB.value.text) {}
+                                if (advancePaymentKey.currentState!
+                                    .validate()) {
+                                  _bookSlot();
                                 }
-                              }),
-                          const Text(
-                            "Book for both Teams",
-                            style: TextStyle(fontFamily: "DMSans"),
-                          )
-                        ],
-                      ),
-                    )),
+                              } else {
+                                Errors.flushBarInform(
+                                    "Field Required for Team B*",
+                                    context,
+                                    "Enter field");
+                              }
+                            } else {
+                              if (advancePaymentKey.currentState!.validate()) {
+                                _bookSlot();
+                              }
+                            }
+                          } else {
+                            Errors.flushBarInform("Field Required for Team A*",
+                                context, "Enter field");
+                          }
+                        },
+                        child: const Text(
+                          "Book Slot",
+                          style: TextStyle(color: Colors.white),
+                        )),
+                  ],
+                ),
               ),
               SizedBox(
                 width: double.infinity,
@@ -346,7 +335,6 @@ class _BookASlotState extends State<BookASlot> {
                   color: Colors.grey.shade100,
                   child: Column(
                     children: [
-
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Form(
@@ -370,8 +358,8 @@ class _BookASlotState extends State<BookASlot> {
                               decoration: const InputDecoration(
                                   fillColor: Colors.white,
                                   border: InputBorder.none,
-                                  errorStyle: TextStyle(color: Colors.white),
-                                  labelText: "Team Name*",
+                                  errorStyle: TextStyle(color: Colors.red),
+                                  labelText: "Team A Name*",
                                   filled: true,
                                   labelStyle: TextStyle(color: Colors.black)),
                             ),
@@ -398,11 +386,16 @@ class _BookASlotState extends State<BookASlot> {
                               onChanged: (data) {
                                 nameKeyA.currentState!.validate();
                               },
+                              keyboardType: TextInputType.name,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp("[a-zA-Z]")),
+                              ],
                               decoration: const InputDecoration(
                                   fillColor: Colors.white,
                                   labelText: "Contact Person*",
                                   border: InputBorder.none,
-                                  errorStyle: TextStyle(color: Colors.white),
+                                  errorStyle: TextStyle(color: Colors.red),
                                   filled: true,
                                   labelStyle: TextStyle(color: Colors.black)),
                             ),
@@ -416,10 +409,11 @@ class _BookASlotState extends State<BookASlot> {
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width / 1.2,
                             child: TextFormField(
+                              maxLength: 10,
                               validator: (value) {
                                 if (value!.isEmpty) {
                                   return "Number required.";
-                                } else if (value.length <= 9) {
+                                } else if (value.length != 10) {
                                   return "Enter 10 digits.";
                                 } else {
                                   return null;
@@ -431,7 +425,8 @@ class _BookASlotState extends State<BookASlot> {
                               },
                               keyboardType: TextInputType.phone,
                               inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
+                                FilteringTextInputFormatter.allow(
+                                    RegExp('[0-9]')),
                               ],
                               autofillHints: const [
                                 AutofillHints.telephoneNumberLocal
@@ -440,12 +435,12 @@ class _BookASlotState extends State<BookASlot> {
                                   fillColor: Colors.white,
                                   border: InputBorder.none,
                                   errorStyle:
-                                      const TextStyle(color: Colors.white),
+                                      const TextStyle(color: Colors.red),
                                   filled: true,
                                   prefixIcon: IconButton(
                                       onPressed: () async {
                                         checkPermissionForContacts(
-                                            numberControllerB);
+                                            numberControllerA);
                                       },
                                       icon: const Icon(Icons.contacts_rounded)),
                                   suffixIcon: IconButton(
@@ -472,6 +467,24 @@ class _BookASlotState extends State<BookASlot> {
                           ),
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          child: TextFormField(
+                            controller: notesTeamA,
+                            decoration: const InputDecoration(
+                              fillColor: Colors.white,
+                              border: InputBorder.none,
+                              errorStyle: TextStyle(color: Colors.red),
+                              filled: true,
+                              hintText: "Notes (Optional)",
+                              hintStyle: TextStyle(color: Colors.black45),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 40),
+                            ),
+                          ),
+                        ),
+                      ),
                       ValueListenableBuilder(
                         valueListenable: amountUpdateListener,
                         builder: (BuildContext context, value, Widget? child) {
@@ -487,7 +500,6 @@ class _BookASlotState extends State<BookASlot> {
                                     child: Form(
                                       key: advancePaymentKey,
                                       child: TextFormField(
-
                                         controller: advancePaymentController,
                                         validator: (value) {
                                           if (value!.isEmpty) {
@@ -501,7 +513,7 @@ class _BookASlotState extends State<BookASlot> {
                                                       .value.text)
                                                   .round()
                                                   .toInt()) {
-                                            return "Can't  More Slot Amount";
+                                            return "Invalid Amount";
                                           } else {
                                             return null;
                                           }
@@ -515,11 +527,12 @@ class _BookASlotState extends State<BookASlot> {
                                         ],
                                         decoration: const InputDecoration(
                                           fillColor: Colors.white,
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                color: Colors.red),
-                                            filled: true,
-                                            hintText: "Booking Amt?",),
+                                          border: InputBorder.none,
+                                          errorStyle:
+                                              TextStyle(color: Colors.red),
+                                          filled: true,
+                                          hintText: "Booking Amt?",
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -593,6 +606,75 @@ class _BookASlotState extends State<BookASlot> {
                                       ),
                                     )
                                   : Container(),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ValueListenableBuilder(
+                                    valueListenable: checkBoxTeamB,
+                                    builder: (context, value, child) =>
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              2,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              CupertinoSwitch(
+                                                  value: value,
+                                                  onChanged: (result) {
+                                                    if (nameKeyA.currentState!
+                                                            .validate() &
+                                                        numberKeyA.currentState!
+                                                            .validate() &
+                                                        teamControllerKeyA
+                                                            .currentState!
+                                                            .validate()) {
+                                                      checkBoxTeamB.value =
+                                                          result;
+                                                      teamControllerB.text =
+                                                          teamControllerA
+                                                              .value.text;
+                                                      nameControllerB.text =
+                                                          nameControllerA
+                                                              .value.text;
+                                                      numberControllerB.text =
+                                                          numberControllerA
+                                                              .value.text;
+                                                      showTeamB.value = result;
+                                                      if (result) {
+                                                        setState(() {
+                                                          int newAmount =
+                                                              updatedPrice;
+                                                          priceController.text =
+                                                              newAmount
+                                                                  .toString();
+                                                        });
+                                                      } else {
+                                                        setState(() {
+                                                          double newAmount =
+                                                              updatedPrice /
+                                                                  2
+                                                                      .toInt()
+                                                                      .round();
+                                                          priceController.text =
+                                                              newAmount
+                                                                  .round()
+                                                                  .toInt()
+                                                                  .toString();
+                                                        });
+                                                      }
+                                                    }
+                                                  }),
+                                              const Text(
+                                                "Book for both Teams",
+                                                style: TextStyle(
+                                                    fontFamily: "DMSans"),
+                                              )
+                                            ],
+                                          ),
+                                        )),
+                              ),
                               ListView(
                                 physics: const BouncingScrollPhysics(),
                                 shrinkWrap: true,
@@ -630,23 +712,202 @@ class _BookASlotState extends State<BookASlot> {
                       ),
                       Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: SizedBox(
-                              child: TextFormField(
-                                controller: notesTeamA,
-                                decoration: const InputDecoration(
-                                  fillColor: Colors.white,
-                                  border: InputBorder.none,
-                                  errorStyle: TextStyle(color: Colors.white),
-                                  filled: true,
-                                  hintText: "Notes (Optional)",
-                                  hintStyle: TextStyle(color: Colors.black45),
-                                  contentPadding:
-                                      EdgeInsets.symmetric(vertical: 40),
-                                ),
-                              ),
-                            ),
+                          ValueListenableBuilder(
+                            valueListenable: showTeamB,
+                            builder: (context, value, child) {
+                              return value
+                                  ? Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Form(
+                                            key: teamControllerKeyB,
+                                            child: SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  1.2,
+                                              child: TextFormField(
+                                                validator: (value) {
+                                                  if (value!.isEmpty) {
+                                                    return "Team name required.";
+                                                  } else if (value.length <=
+                                                      2) {
+                                                    return "Enter Correct Name.";
+                                                  } else {
+                                                    return null;
+                                                  }
+                                                },
+                                                controller: teamControllerB,
+                                                onChanged: (data) {
+                                                  nameKeyB.currentState!
+                                                      .validate();
+                                                },
+                                                decoration:
+                                                    const InputDecoration(
+                                                        fillColor: Colors.white,
+                                                        border:
+                                                            InputBorder.none,
+                                                        errorStyle: TextStyle(
+                                                            color: Colors.red),
+                                                        labelText:
+                                                            "Team B Name*",
+                                                        filled: true,
+                                                        labelStyle: TextStyle(
+                                                            color:
+                                                                Colors.black)),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Form(
+                                            key: nameKeyB,
+                                            child: SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  1.2,
+                                              child: TextFormField(
+                                                validator: (value) {
+                                                  if (value!.isEmpty) {
+                                                    return "Name required.";
+                                                  } else if (value.length <=
+                                                      2) {
+                                                    return "Enter Correct Name.";
+                                                  } else {
+                                                    return null;
+                                                  }
+                                                },
+                                                controller: nameControllerB,
+                                                onChanged: (data) {
+                                                  nameKeyB.currentState!
+                                                      .validate();
+                                                },
+                                                decoration:
+                                                    const InputDecoration(
+                                                        fillColor: Colors.white,
+                                                        labelText:
+                                                            "Contact Person*",
+                                                        border:
+                                                            InputBorder.none,
+                                                        errorStyle: TextStyle(
+                                                            color: Colors.red),
+                                                        filled: true,
+                                                        labelStyle: TextStyle(
+                                                            color:
+                                                                Colors.black)),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Form(
+                                            key: numberKeyB,
+                                            child: SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  1.2,
+                                              child: TextFormField(
+                                                validator: (value) {
+                                                  if (value!.isEmpty) {
+                                                    return "Number required.";
+                                                  } else if (value.length !=
+                                                      10) {
+                                                    return "Enter 10 digits.";
+                                                  } else {
+                                                    return null;
+                                                  }
+                                                },
+                                                maxLength: 10,
+                                                controller: numberControllerB,
+                                                onChanged: (data) {
+                                                  numberKeyB.currentState!
+                                                      .validate();
+                                                },
+                                                keyboardType:
+                                                    TextInputType.phone,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter
+                                                      .allow(RegExp('[0-9]')),
+                                                ],
+                                                autofillHints: const [
+                                                  AutofillHints
+                                                      .telephoneNumberLocal
+                                                ],
+                                                decoration: InputDecoration(
+                                                    fillColor: Colors.white,
+                                                    border: InputBorder.none,
+                                                    errorStyle: const TextStyle(
+                                                        color: Colors.red),
+                                                    filled: true,
+                                                    prefixIcon: IconButton(
+                                                        onPressed: () async {
+                                                          checkPermissionForContacts(
+                                                              numberControllerB);
+                                                        },
+                                                        icon: const Icon(Icons
+                                                            .contacts_rounded)),
+                                                    suffixIcon: IconButton(
+                                                        onPressed: () async {
+                                                          if (numberControllerB
+                                                              .value
+                                                              .text
+                                                              .isEmpty) {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                                    const SnackBar(
+                                                                        content:
+                                                                            Text("No Number Available")));
+                                                          } else {
+                                                            FlutterPhoneDirectCaller
+                                                                .callNumber(
+                                                                    numberControllerB
+                                                                        .value
+                                                                        .text);
+                                                          }
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons.call,
+                                                          color: Colors.blue,
+                                                        )),
+                                                    labelText:
+                                                        "Contact Number*",
+                                                    labelStyle: const TextStyle(
+                                                        color: Colors.black)),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: SizedBox(
+                                            child: TextFormField(
+                                              controller: notesTeamB,
+                                              decoration: const InputDecoration(
+                                                fillColor: Colors.white,
+                                                border: InputBorder.none,
+                                                errorStyle: TextStyle(
+                                                    color: Colors.red),
+                                                filled: true,
+                                                hintText: "Notes (Optional)",
+                                                hintStyle: TextStyle(
+                                                    color: Colors.black45),
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                        vertical: 40),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Container();
+                            },
                           ),
                         ],
                       ),
@@ -654,22 +915,21 @@ class _BookASlotState extends State<BookASlot> {
                   ),
                 ),
               ),
-
             ],
           ),
         ));
   }
 
   Future<void> _bookSlot() async {
+    await alertUser();
+    await showLoading();
     if (widget.bookingID.isEmpty) {
       String uniqueID = UniqueID.generateRandomString();
       try {
-        await _server
-            .collection("GroundBookings")
-
-            .add({
+        await _server.collection("GroundBookings").add({
           'slotTime': widget.slotTime,
           'bookingPerson': 'Ground Owner',
+          'groundName': widget.groundName,
           'bookingCreated': DateTime.parse(widget.date),
           'bookedAt': DateTime.now(),
           'userID': _auth.currentUser!.uid,
@@ -677,11 +937,11 @@ class _BookASlotState extends State<BookASlot> {
           'isBookingCancelled': false,
           'feesDue':
               updatedPrice - int.parse(advancePaymentController.value.text),
-
+          'paymentMode': PaymentMode.type,
           'ratingGiven': false,
           'rating': 3.0,
           'bothTeamBooked': checkBoxTeamB.value,
-          'groundID': widget.groundID[widget.groundIndex],
+          'groundID': widget.groundID,
           "teamA": {
             'teamName': teamControllerA.value.text,
             'personName': nameControllerA.value.text,
@@ -707,11 +967,10 @@ class _BookASlotState extends State<BookASlot> {
           'bookingID': uniqueID,
           'date': widget.date,
         }).then((value) => {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Creating a Booking"))),
-                  PageRouter.pushReplacement(
-                      context, BookingInfo(bookingID: uniqueID))
-                });
+              alertUser(),
+              PageRouter.pushReplacement(
+                  context, BookingInfo(bookingID: uniqueID))
+            });
       } on SocketException catch (e) {
         if (mounted) {
           Errors.flushBarInform(e.toString(), context, "Internet Connectivity");
@@ -723,29 +982,28 @@ class _BookASlotState extends State<BookASlot> {
       }
     } else {
       try {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Creating a Booking")));
-        var refDetails = await
-        _server
+        var refDetails = await _server
             .collection("GroundBookings")
             .where("bookingID", isEqualTo: widget.bookingID)
             .get();
-        await  _server
+        await _server
             .collection("GroundBookings")
             .doc(refDetails.docs.first.id)
             .update({
           'slotTime': widget.slotTime,
           'bookingPerson': 'Ground Owner',
+          'groundName': widget.groundName,
           'bookingCreated': DateTime.parse(widget.date),
           'bookedAt': DateTime.now(),
           'isBookingCancelled': false,
           'userID': _auth.currentUser!.uid,
           'feesDue':
               updatedPrice - int.parse(advancePaymentController.value.text),
+          'paymentMode': PaymentMode.type,
           'ratingGiven': false,
           'rating': 3.0,
           'ratingTags': [],
-          'groundID': widget.groundID[widget.groundIndex],
+          'groundID': widget.groundID,
           "teamA": {
             'teamName': teamControllerA.value.text,
             'personName': nameControllerA.value.text,
@@ -772,8 +1030,6 @@ class _BookASlotState extends State<BookASlot> {
           'bookingID': widget.bookingID,
           'date': widget.date,
         }).then((value) => {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Booking Created"))),
                   PageRouter.pushReplacement(
                       context, BookingInfo(bookingID: widget.bookingID))
                 });
@@ -790,23 +1046,61 @@ class _BookASlotState extends State<BookASlot> {
   }
 
   String slotStatus() {
-    if (!checkBoxTeamB.value) {
-      if (double.parse(priceController.value.text).round().toInt() !=
-          double.parse(advancePaymentController.value.text).round().toInt()) {
-        return "Fees Due";
-      } else {
-        return "Half Booked";
-      }
-    }
     if (checkBoxTeamB.value) {
-      if (double.parse(priceController.value.text).round().toInt() !=
-          double.parse(advancePaymentController.value.text).round().toInt()) {
-        return "Fees Due";
-      } else {
-        return "Booked";
+      return 'Booked';
+    } else {
+      return 'Half Booked';
+    }
+  }
+
+  Future<void> sendSms({required String number}) async {
+    String url =
+        'http://api.bulksmsgateway.in/sendmessage.php?user=sportslovez&password=7788330&mobile=$number&message=Your Booking is Confirmed for ${widget.groundName} on ${DateFormat.yMMMd().format(DateTime.parse(widget.group))} at ${widget.slotTime} Thanks for Choosing Facility on Sportistan&sender=SPTNOT&type=3&template_id=1407170003612415391';
+    await http.post(Uri.parse(url));
+  }
+
+  Future<void> showLoading() async {
+    showModalBottomSheet(
+      isDismissible: false,
+      isScrollControlled: false,
+      enableDrag: false,
+      context: context,
+      builder: (ctx) {
+        return FractionallySizedBox(
+          heightFactor: 0.60,
+          child: Column(
+            children: [
+              Text(
+                "Booking is Creating",
+                style: TextStyle(
+                    fontFamily: "DMSans",
+                    fontWeight: FontWeight.bold,
+                    fontSize: MediaQuery.of(context).size.height / 40),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(
+                    strokeWidth: 1, color: Colors.green),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> alertUser() async {
+    if (updateSmsAlert) {
+      if (numberControllerA.value.text.isNotEmpty) {
+        await sendSms(number: numberControllerA.value.text);
+        if (numberControllerB.value.text.isNotEmpty) {
+          if (numberControllerA.value.text != numberControllerB.value.text) {
+            await sendSms(number: numberControllerB.value.text);
+          }
+        }
       }
     }
-    return "";
+    updateSmsAlert = true;
   }
 }
 
@@ -815,10 +1109,10 @@ class Content extends StatefulWidget {
   final Widget child;
 
   const Content({
-    Key? key,
+    super.key,
     required this.title,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   ContentState createState() => ContentState();
@@ -832,7 +1126,7 @@ class ContentState extends State<Content> {
       margin: const EdgeInsets.all(5),
       clipBehavior: Clip.antiAliasWithSaveLayer,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Row(
@@ -842,6 +1136,7 @@ class ContentState extends State<Content> {
                 widget.title,
                 style: const TextStyle(
                   fontFamily: "DMSans",
+                  fontSize: 18,
                   fontWeight: FontWeight.w500,
                 ),
               ),

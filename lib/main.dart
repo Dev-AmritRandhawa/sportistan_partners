@@ -24,23 +24,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 }
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug);
-  requestPermission();
-
-  initializeDateFormatting('en', '').then((value) => null);
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-      .then((_) {
-    runApp(const MaterialApp(home: MyApp()));
-  });
-}
-
-
-
 final messaging = FirebaseMessaging.instance;
 
 Future<void> requestPermission() async {
@@ -54,17 +37,31 @@ Future<void> requestPermission() async {
     sound: true,
   );
 
-  if (settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
     registerFCM();
   }
 }
 
 Future<void> registerFCM() async {
-  String? token = await messaging.getToken();
   Notifications.init();
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+}
 
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.appAttest);
+  initializeDateFormatting('en', '').then((value) => null);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((_) {
+    requestPermission();
+
+    runApp(const MaterialApp(home: MyApp()));
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -108,26 +105,32 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
-        (_) => Future.delayed(const Duration(milliseconds: 3500), () async {
+        (_) => Future.delayed(const Duration(milliseconds: 2000), () async {
               _auth.authStateChanges().listen((User? user) async {
                 if (user != null) {
                   try {
-                    CollectionReference collectionReference = _server
-                        .collection("SportistanPartnersProfile")
-                        .doc(_auth.currentUser!.uid)
-                        .collection("Account");
-                    QuerySnapshot querySnapshot =
-                        await collectionReference.get();
-                    if (querySnapshot.docs.isEmpty) {
-                      if (mounted) {
-                        PageRouter.pushRemoveUntil(
-                            context, const PhoneAuthentication());
-                      }
-                    } else {
-                      if (mounted) {
-                        PageRouter.pushRemoveUntil(context, const NavHome());
-                      }
-                    }
+                    _server
+                        .collection("SportistanPartners")
+                        .where('userID', isEqualTo: _auth.currentUser!.uid)
+                        .get()
+                        .then((value) => {
+                              if (value.docChanges.isEmpty)
+                                {
+                                  if (mounted)
+                                    {
+                                      PageRouter.pushRemoveUntil(
+                                          context, const PhoneAuthentication())
+                                    }
+                                }
+                              else
+                                {
+                                  if (mounted)
+                                    {
+                                      PageRouter.pushRemoveUntil(
+                                          context, const NavHome())
+                                    }
+                                }
+                            });
                   } on SocketException catch (e) {
                     if (mounted) {
                       Errors.flushBarInform(

@@ -2,29 +2,21 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportistan_partners/nav_bar/slot_add_settings.dart';
-import 'package:sportistan_partners/utils/errors.dart';
-
-class SlotSettingsID {
-  static String? groundID;
-  static String? groundName;
-}
 
 class UniqueID {
   static String generateRandomString() {
-    var r = Random();
+    var random = Random();
     const chars =
         'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-    return List.generate(20, (index) => chars[r.nextInt(chars.length)]).join();
+    return List.generate(25, (index) => chars[random.nextInt(chars.length)])
+        .join();
   }
 }
 
 class SlotSettings extends StatefulWidget {
-  final String groundName;
-  final String groundID;
-
-  const SlotSettings(
-      {super.key, required this.groundName, required this.groundID});
+  const SlotSettings({super.key});
 
   @override
   SlotSettingsState createState() => SlotSettingsState();
@@ -35,6 +27,8 @@ class SlotSettingsState extends State<SlotSettings> {
 
   int currentPage = 0;
 
+  ValueNotifier<bool> showSlots = ValueNotifier<bool>(false);
+
   _onPageChanged(int index) {
     setState(() {
       currentPage = index;
@@ -43,9 +37,14 @@ class SlotSettingsState extends State<SlotSettings> {
 
   @override
   void initState() {
-    SlotSettingsID.groundID = widget.groundID;
-    SlotSettingsID.groundName = widget.groundName;
+    setGroundID();
     super.initState();
+  }
+
+  setGroundID() async {
+   String id = UniqueID.generateRandomString();
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    preferences.setString('groundID', id);
   }
 
   @override
@@ -60,18 +59,22 @@ class SlotSettingsState extends State<SlotSettings> {
       body: Stack(
         children: [
           PageView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            controller: _pageController,
-            itemCount: 7,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (ctx, i) => _listOfWidget[i],
-          ),
+              physics: const NeverScrollableScrollPhysics(),
+              controller: _pageController,
+              itemCount: 7,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (ctx, i) => ValueListenableBuilder(
+                    valueListenable: showSlots,
+                    builder: (context, value, child) {
+                      return _listOfWidget[i];
+                    },
+                  )),
           SafeArea(
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               TextButton(
-                  child: const Text("Next",
-                      style:
-                          TextStyle(color: Colors.black, fontFamily: "DMSans")),
+                  child: const Text(
+                    "Next",
+                  ),
                   onPressed: () {
                     if (DataSave.entries.isNotEmpty) {
                       if (DataSave.isDataSave) {
@@ -80,41 +83,36 @@ class SlotSettingsState extends State<SlotSettings> {
                             curve: Curves.easeIn);
                         DataSave.isDataSave = false;
                         DataSave.entries.clear();
-                      } else {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => Platform.isAndroid
-                              ? AlertDialog(
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(ctx);
-                                        },
-                                        child: const Text("Ok"))
-                                  ],
-                                  title: const Text("Save Data"),
-                                  content:
-                                      const Text("Please Save The Slots First"),
-                                )
-                              : CupertinoAlertDialog(
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(ctx);
-                                        },
-                                        child: const Text("Ok"))
-                                  ],
-                                  title: const Text("Save Data"),
-                                  content:
-                                      const Text("Please Save The Slots First"),
-                                ),
-                        );
                       }
                     } else {
-                      Alert.flushBarBadAlert(
-                          message: "Please Save a Slot",
-                          context: context,
-                          title: "Slot is Required");
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => Platform.isAndroid
+                            ? AlertDialog(
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                      },
+                                      child: const Text("Ok"))
+                                ],
+                                title: const Text("Save Data"),
+                                content:
+                                    const Text("Please Save The Slots First"),
+                              )
+                            : CupertinoAlertDialog(
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                      },
+                                      child: const Text("Ok"))
+                                ],
+                                title: const Text("Save Data"),
+                                content:
+                                    const Text("Please Save The Slots First"),
+                              ),
+                      );
                     }
                   }),
             ]),
@@ -123,6 +121,7 @@ class SlotSettingsState extends State<SlotSettings> {
       ),
     );
   }
+
   final List<Widget> _listOfWidget = <Widget>[
     const SlotAddSettings(
       day: 'Monday',

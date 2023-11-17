@@ -7,12 +7,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
 import 'package:pinput/pinput.dart';
-
 import 'package:sportistan_partners/authentication/search_field.dart';
 import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/errors.dart';
@@ -40,6 +38,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
 
   GoogleSignInAccount? currentUser;
 
+
+
   Future<void> _launchInBrowser(Uri url) async {
     if (!await launchUrl(
       url,
@@ -63,23 +63,22 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   }
 
   GoogleSignIn googleSignIn = GoogleSignIn(
-    clientId: '100473162886811688440',
+    clientId:
+        '497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com',
   );
   final Uri toLaunch = Uri(
-      scheme: 'https', host: 'www.sportslovez.in', path: 'Terms&Conditions/');
+      scheme: 'https', host: 'www.sportistan.co.in', path: 'Terms&Services');
 
   @override
   void dispose() {
     numberController.dispose();
     otpController.dispose();
     _controller.dispose();
-    _server.terminate();
     super.dispose();
   }
 
   @override
   void initState() {
-    _server.enableNetwork();
     _controller = AnimationController(vsync: this);
     super.initState();
   }
@@ -91,6 +90,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   ValueNotifier<bool> loading = ValueNotifier<bool>(false);
   ValueNotifier<bool> buttonDisable = ValueNotifier<bool>(false);
   ValueNotifier<bool> imageShow = ValueNotifier<bool>(true);
+  ValueNotifier<bool> signInCheck = ValueNotifier<bool>(false);
   OtpTimerButtonController controller = OtpTimerButtonController();
 
   requestOtp() {
@@ -114,14 +114,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
     const borderColor = Colors.white;
 
     final defaultPinTheme = PinTheme(
-      width: MediaQuery
-          .of(context)
-          .size
-          .width / 10,
-      height: MediaQuery
-          .of(context)
-          .size
-          .width / 10,
+      width: MediaQuery.of(context).size.width / 10,
+      height: MediaQuery.of(context).size.width / 10,
       textStyle: const TextStyle(
         fontSize: 22,
         color: Colors.black,
@@ -151,20 +145,17 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                           builder: (context, value, child) {
                             return value
                                 ? Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: DelayedDisplay(
-                                child: Image.asset(
-                                  "assets/logo.png",
-                                  color: Colors.white,
-                                  height:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .height /
-                                      10,
-                                ),
-                              ),
-                            )
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: DelayedDisplay(
+                                      child: Image.asset(
+                                        "assets/logo.png",
+                                        color: Colors.white,
+                                        height:
+                                            MediaQuery.of(context).size.height /
+                                                10,
+                                      ),
+                                    ),
+                                  )
                                 : Container();
                           },
                         ),
@@ -178,10 +169,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                 style: TextStyle(
                                     fontFamily: "Nunito",
                                     fontSize:
-                                    MediaQuery
-                                        .of(context)
-                                        .size
-                                        .height / 20,
+                                        MediaQuery.of(context).size.height / 20,
                                     color: Colors.white),
                               ),
                               Container()
@@ -199,17 +187,11 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     fontFamily: "DMSans",
                                     fontWeight: FontWeight.bold,
                                     fontSize:
-                                    MediaQuery
-                                        .of(context)
-                                        .size
-                                        .height / 10,
+                                        MediaQuery.of(context).size.height / 10,
                                     color: Colors.white),
                               ),
                               SizedBox(
-                                height: MediaQuery
-                                    .of(context)
-                                    .size
-                                    .height / 10,
+                                height: MediaQuery.of(context).size.height / 10,
                                 child: Lottie.asset(
                                   'assets/bouncingBall.json',
                                   controller: _controller,
@@ -232,10 +214,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                           builder:
                               (BuildContext context, value, Widget? child) {
                             return SizedBox(
-                              width: MediaQuery
-                                  .of(context)
-                                  .size
-                                  .width / 1.2,
+                              width: MediaQuery.of(context).size.width / 1.2,
                               child: Form(
                                 key: numberKey,
                                 child: TextFormField(
@@ -274,7 +253,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                       fillColor: Colors.white,
                                       border: const OutlineInputBorder(),
                                       errorStyle:
-                                      const TextStyle(color: Colors.white),
+                                          const TextStyle(color: Colors.white),
                                       filled: true,
                                       prefixIcon: CountryCodePicker(
                                         showCountryOnly: true,
@@ -287,9 +266,9 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                       ),
                                       hintText: "Phone Number",
                                       hintStyle:
-                                      const TextStyle(color: Colors.black),
+                                          const TextStyle(color: Colors.black),
                                       labelStyle:
-                                      const TextStyle(color: Colors.black)),
+                                          const TextStyle(color: Colors.black)),
                                 ),
                               ),
                             );
@@ -300,66 +279,63 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                           builder: (context, value, child) {
                             return value
                                 ? Padding(
-                              padding: EdgeInsets.all(
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .width / 25),
-                              child: Pinput(
-                                controller: otpController,
-                                androidSmsAutofillMethod:
-                                AndroidSmsAutofillMethod
-                                    .smsUserConsentApi,
-                                listenForMultipleSmsOnAndroid: true,
-                                defaultPinTheme: defaultPinTheme,
-                                length: 6,
-                                separatorBuilder: (index) =>
-                                const SizedBox(width: 8),
-                                hapticFeedbackType:
-                                HapticFeedbackType.lightImpact,
-                                onCompleted: (pin) {
-                                  _manualVerify(pin);
-                                },
-                                cursor: Column(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      margin: const EdgeInsets.only(
-                                          bottom: 9),
-                                      width: 22,
-                                      height: 1,
-                                      color: focusedBorderColor,
+                                    padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width / 25),
+                                    child: Pinput(
+                                      controller: otpController,
+                                      androidSmsAutofillMethod:
+                                          AndroidSmsAutofillMethod
+                                              .smsUserConsentApi,
+                                      listenForMultipleSmsOnAndroid: true,
+                                      defaultPinTheme: defaultPinTheme,
+                                      length: 6,
+                                      separatorBuilder: (index) =>
+                                          const SizedBox(width: 8),
+                                      hapticFeedbackType:
+                                          HapticFeedbackType.lightImpact,
+                                      onCompleted: (pin) {
+                                        _manualVerify(pin);
+                                      },
+                                      cursor: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Container(
+                                            margin: const EdgeInsets.only(
+                                                bottom: 9),
+                                            width: 22,
+                                            height: 1,
+                                            color: focusedBorderColor,
+                                          ),
+                                        ],
+                                      ),
+                                      focusedPinTheme: defaultPinTheme.copyWith(
+                                        decoration: defaultPinTheme.decoration!
+                                            .copyWith(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                              color: focusedBorderColor),
+                                        ),
+                                      ),
+                                      submittedPinTheme:
+                                          defaultPinTheme.copyWith(
+                                        decoration: defaultPinTheme.decoration!
+                                            .copyWith(
+                                          color: fillColor,
+                                          borderRadius:
+                                              BorderRadius.circular(19),
+                                          border: Border.all(
+                                              color: focusedBorderColor),
+                                        ),
+                                      ),
+                                      errorPinTheme:
+                                          defaultPinTheme.copyBorderWith(
+                                        border:
+                                            Border.all(color: Colors.redAccent),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                focusedPinTheme: defaultPinTheme.copyWith(
-                                  decoration: defaultPinTheme.decoration!
-                                      .copyWith(
-                                    borderRadius:
-                                    BorderRadius.circular(8),
-                                    border: Border.all(
-                                        color: focusedBorderColor),
-                                  ),
-                                ),
-                                submittedPinTheme:
-                                defaultPinTheme.copyWith(
-                                  decoration: defaultPinTheme.decoration!
-                                      .copyWith(
-                                    color: fillColor,
-                                    borderRadius:
-                                    BorderRadius.circular(19),
-                                    border: Border.all(
-                                        color: focusedBorderColor),
-                                  ),
-                                ),
-                                errorPinTheme:
-                                defaultPinTheme.copyBorderWith(
-                                  border:
-                                  Border.all(color: Colors.redAccent),
-                                ),
-                              ),
-                            )
+                                  )
                                 : Container();
                           },
                         ),
@@ -369,29 +345,29 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                             return value
                                 ? Container()
                                 : Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CupertinoButton(
-                                onPressed: () async {
-                                  if (numberKey.currentState!
-                                      .validate()) {
-                                    try {
-                                      loading.value = true;
-                                      await _verifyByNumber(
-                                          countryCode,
-                                          numberController.value.text
-                                              .toString());
-                                    } on FirebaseAuthException catch (e) {
-                                      _showError(e.message.toString());
-                                    }
-                                  }
-                                },
-                                color: Colors.green,
-                                child: const Text(
-                                  "Send OTP",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            );
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: CupertinoButton(
+                                      onPressed: () async {
+                                        if (numberKey.currentState!
+                                            .validate()) {
+                                          try {
+                                            loading.value = true;
+                                            await _verifyByNumber(
+                                                countryCode,
+                                                numberController.value.text
+                                                    .toString());
+                                          } on FirebaseAuthException catch (e) {
+                                            _showError(e.message.toString());
+                                          }
+                                        }
+                                      },
+                                      color: Colors.green,
+                                      child: const Text(
+                                        "Send OTP",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  );
                           },
                           valueListenable: loading,
                         ),
@@ -401,81 +377,75 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                               Widget? child) {
                             return value
                                 ? SizedBox(
-                              width:
-                              MediaQuery
-                                  .of(context)
-                                  .size
-                                  .width / 2,
-                              child: OtpTimerButton(
-                                buttonType: ButtonType.elevated_button,
-                                controller: controller,
-                                onPressed: () {
-                                  requestOtp();
-                                },
-                                text: const Text('Resend OTP',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: "DMSans")),
-                                duration: 30,
-                              ),
-                            )
+                                    width:
+                                        MediaQuery.of(context).size.width / 2,
+                                    child: OtpTimerButton(
+                                      buttonType: ButtonType.elevated_button,
+                                      controller: controller,
+                                      onPressed: () {
+                                        requestOtp();
+                                      },
+                                      text: const Text('Resend OTP',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: "DMSans")),
+                                      duration: 30,
+                                    ),
+                                  )
                                 : Container();
                           },
                         ),
                       ],
                     ),
-                    CupertinoButton(
-                        color: Colors.white,
-                        onPressed: () {
-                          handleSignIn();
-                        },
-                        child: SizedBox(
-                          width: MediaQuery
-                              .of(context)
-                              .size
-                              .width / 2,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              const Text(
-                                "Continue with Google",
-                                style: TextStyle(
-                                    color: Colors.black, fontFamily: "DMSans"),
-                              ),
-                              Image.asset("assets/gicon.png",
-                                  height:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .height / 45)
-                            ],
-                          ),
-                        )),
+                    ValueListenableBuilder(valueListenable: signInCheck, builder: (context, value, child) {
+                      return value ? Column(
+                        children: [
+                          const CircularProgressIndicator(strokeWidth: 1,color: Colors.white),
+                          CupertinoButton(
+                               onPressed: (){
+                            signInCheck.value = false;
+                          },
+                              child: const Text("Cancel",style: TextStyle(color: Colors.white),))
+                        ],
+                      ) : CupertinoButton(
+                          color: Colors.white,
+                          onPressed: () {
+                            signInCheck.value = true;
+                            handleSignIn();
+                          },
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width / 2,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                const Text(
+                                  "Continue with Google",
+                                  style: TextStyle(
+                                      color: Colors.black, fontFamily: "DMSans"),
+                                ),
+                                Image.asset("assets/gicon.png",
+                                    height:
+                                    MediaQuery.of(context).size.height / 45)
+                              ],
+                            ),
+                          ));
+                    },),
                     ValueListenableBuilder(
                       valueListenable: buttonDisable,
                       builder: (context, value, child) {
                         return value
                             ? const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        )
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              )
                             : Container();
                       },
                     ),
                     Padding(
                       padding: EdgeInsets.only(
-                          top: MediaQuery
-                              .of(context)
-                              .size
-                              .width / 8,
-                          left: MediaQuery
-                              .of(context)
-                              .size
-                              .width / 30,
-                          right: MediaQuery
-                              .of(context)
-                              .size
-                              .width / 30),
+                          top: MediaQuery.of(context).size.width / 8,
+                          left: MediaQuery.of(context).size.width / 30,
+                          right: MediaQuery.of(context).size.width / 30),
                       child: GestureDetector(
                         onTap: () async {
                           Platform.isIOS
@@ -489,10 +459,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                               fontFamily: "DMSans",
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: MediaQuery
-                                  .of(context)
-                                  .size
-                                  .width / 28,
+                              fontSize: MediaQuery.of(context).size.width / 28,
                             ),
                             children: [
                               TextSpan(
@@ -501,10 +468,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                   color: Colors.white,
                                   fontFamily: "DMSans",
                                   fontSize:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .width / 30,
+                                      MediaQuery.of(context).size.width / 30,
                                 ),
                               ),
                               TextSpan(
@@ -513,10 +477,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                   fontFamily: "DMSans",
                                   color: Colors.white,
                                   fontSize:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .width / 30,
+                                      MediaQuery.of(context).size.width / 30,
                                 ),
                               ),
                               TextSpan(
@@ -525,10 +486,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                   fontFamily: "DMSans",
                                   color: Colors.white,
                                   fontSize:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .width / 30,
+                                      MediaQuery.of(context).size.width / 30,
                                 ),
                               ),
                               TextSpan(
@@ -537,10 +495,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                   fontFamily: "DMSans",
                                   color: Colors.white,
                                   fontSize:
-                                  MediaQuery
-                                      .of(context)
-                                      .size
-                                      .width / 30,
+                                      MediaQuery.of(context).size.width / 30,
                                 ),
                               ),
                             ],
@@ -566,7 +521,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
           buttonDisable.value = true;
           await _auth
               .signInWithCredential(credential)
-              .then((value) => {_checkUserExistence()});
+              .then((value) => {_checkUserExistenceWitPhone()});
         } on FirebaseAuthException catch (e) {
           buttonDisable.value = false;
           _showError(e.message.toString());
@@ -598,7 +553,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       buttonDisable.value = true;
       await _auth
           .signInWithCredential(credential)
-          .then((value) => {_checkUserExistence()});
+          .then((value) => {_checkUserExistenceWitPhone()});
     } on FirebaseAuthException catch (e) {
       buttonDisable.value = false;
 
@@ -617,14 +572,15 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       currentUser = await googleSignIn.signIn();
       if (currentUser != null) {
         final GoogleSignInAuthentication googleSignInAuthentication =
-        await currentUser!.authentication;
+            await currentUser!.authentication;
 
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleSignInAuthentication.accessToken,
           idToken: googleSignInAuthentication.idToken,
         );
+
         final UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
+            await FirebaseAuth.instance.signInWithCredential(credential);
         if (userCredential.user != null) {
           if (mounted) {
             _checkUserExistence();
@@ -637,8 +593,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(e.toString())));
         }
-      }
-      else if (e.code == 'invalid-credential') {
+      } else if (e.code == 'invalid-credential') {
         if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -652,47 +607,77 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
     }
   }
 
-Future<void> _checkUserExistence() async {
-  CollectionReference collectionReference = _server
-      .collection("SportistanPartnersProfile")
-      .doc(_auth.currentUser!.uid)
-      .collection("Account");
-  QuerySnapshot querySnapshot = await collectionReference.get();
-  if (querySnapshot.docs.isEmpty) {
-    LocationPermission permission;
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse) {
-      _server
-          .collection("SportistanPartners")
-          .where("userID", isEqualTo: _auth.currentUser!.uid)
-          .get()
-          .then((value) =>
-      {
-        if (value.docs.isNotEmpty)
-          {
-            _server
-                .collection("SportistanPartnersProfile")
-                .doc(_auth.currentUser!.uid)
-                .collection("Account")
-                .doc(DateTime.now().toString())
-                .set({'accountCreatedAt': DateTime.now()}).then(
-                    (value) => {_moveToHome()}),
-          }
-        else
-          {
-            _moveToRegister()}
-      });
+  Future<void> _checkUserExistence() async {
+
+    CollectionReference collectionReference = _server
+        .collection("SportistanPartnersProfile")
+        .doc(_auth.currentUser!.uid)
+        .collection("Account");
+    QuerySnapshot querySnapshot = await collectionReference.get();
+    if (querySnapshot.docs.isEmpty) {
+      if (_auth.currentUser != null) {
+        await _auth.currentUser!.delete();
+        await handleSignOut();
+        signInCheck.value = false;
+       if(mounted){
+         showModalBottomSheet(
+           context: context,
+           builder: (ctx) {
+             return Column(
+               mainAxisAlignment: MainAxisAlignment.spaceAround,
+               children: [
+                 const Text(
+                   "No Account Found",
+                   style: TextStyle(
+                       fontFamily: "DMSans", fontSize: 18, color: Colors.black),
+                 ),
+                 const Padding(
+                   padding: EdgeInsets.all(8.0),
+                   child: Text(
+                     "Use Phone Number to Create Account then you can login with google account using Connect with Google in profile settings",
+                     style: TextStyle(fontFamily: "DMSans"),
+                   ),
+                 ),
+                 Image.asset("assets/noResults.png"),
+                 CupertinoButton(
+                     color: Colors.green,
+                     onPressed: () {
+                       Navigator.pop(ctx);
+                     },
+                     child: const Text("OK"))
+               ],
+             );
+           },
+         );
+       }
+      }
+    } else {
+      _moveToHome();
     }
-  } else {
-    _moveToHome();
+  }
+Future<void> _checkUserExistenceWitPhone() async {
+
+    CollectionReference collectionReference = _server
+        .collection("SportistanPartnersProfile")
+        .doc(_auth.currentUser!.uid)
+        .collection("Account");
+    QuerySnapshot querySnapshot = await collectionReference.get();
+    if (querySnapshot.docs.isEmpty) {
+
+        _moveToRegister();
+    } else {
+      _moveToHome();
+    }
+  }
+
+
+
+  void _moveToHome() {
+    PageRouter.pushRemoveUntil(context, const NavHome());
+  }
+
+  Future<void> _moveToRegister() async {
+    PageRouter.pushRemoveUntil(context, const SearchField());
+
   }
 }
-
-void _moveToRegister() {
-  PageRouter.pushRemoveUntil(context, const SearchField());
-}
-
-void _moveToHome() {
-  PageRouter.pushRemoveUntil(context, const NavHome());
-}}

@@ -1,32 +1,22 @@
-import 'dart:async';
+
 import 'dart:io';
 import 'package:chips_choice/chips_choice.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:delayed_display/delayed_display.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/bookings/book_a_slot.dart';
-import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/register_data_class.dart';
 
 class GroundDetailsRegister extends StatefulWidget {
-  final double latitude;
-  final double longitude;
-  final String address;
-  final List<String> groundImages;
+  const GroundDetailsRegister({super.key});
 
-  const GroundDetailsRegister(
-      {super.key,
-      required this.latitude,
-      required this.longitude,
-      required this.address,
-      required this.groundImages});
+
+
+
 
   @override
   State<GroundDetailsRegister> createState() => _GroundDetailsRegisterState();
@@ -37,19 +27,11 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
   TextEditingController groundController = TextEditingController();
   GlobalKey<FormState> groundKey = GlobalKey<FormState>();
   GlobalKey<FormState> nameKey = GlobalKey<FormState>();
-  ValueNotifier<bool> fileUpload = ValueNotifier<bool>(false);
-  ValueNotifier<bool> loading = ValueNotifier<bool>(false);
-  final _auth = FirebaseAuth.instance;
-  List<String> allFiles = [];
-  final _storage = FirebaseStorage.instance;
-  FilePickerResult? result;
-  List<String> urls = [];
 
-  final _server = FirebaseFirestore.instance;
+
 
   @override
   void dispose() {
-    _server.terminate();
     nameController.dispose();
     groundController.dispose();
     super.dispose();
@@ -58,12 +40,10 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
   @override
   void initState() {
     super.initState();
-    _server.enableNetwork();
   }
 
   List<File>? selectedFiles = [];
 
-  double? _progress;
   String? sportTags = "Cricket";
   List<String> sportOptions = [
     'Cricket',
@@ -107,7 +87,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                   child: TextFormField(
                     validator: (input) {
                       if (input!.isEmpty) {
-                        Errors.flushBarAuth("Enter Your Name", context);
                         return "Name is Missing";
                       } else {
                         return null;
@@ -115,8 +94,12 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     },
                     style: const TextStyle(color: Colors.black87),
                     controller: nameController,
+                    keyboardType: TextInputType.name,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z]")),
+                    ],
                     decoration: InputDecoration(
-                        errorStyle: const TextStyle(color: Colors.black),
+                        errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Owner Name as Per Documents",
                         hintStyle: TextStyle(
                             fontSize: MediaQuery.of(context).size.height / 50,
@@ -135,10 +118,8 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
-                    maxLength: 40,
                     validator: (input) {
                       if (input!.isEmpty) {
-                        Errors.flushBarAuth("Enter Your Ground Name", context);
                         return "Ground Name is Missing";
                       } else {
                         return null;
@@ -146,9 +127,12 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     },
                     style: const TextStyle(color: Colors.black87),
                     controller: groundController,
+                    keyboardType: TextInputType.name,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z]")),
+                    ],
                     decoration: InputDecoration(
-                        counter: Container(),
-                        errorStyle: const TextStyle(color: Colors.black),
+                        errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Ground Name",
                         hintStyle: TextStyle(
                             fontSize: MediaQuery.of(context).size.height / 50,
@@ -172,7 +156,7 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        widget.address,
+                        RegisterDataClass.address,
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: MediaQuery.of(context).size.height / 50,
@@ -220,28 +204,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                         style: TextStyle(fontSize: 20),
                       ),
                     ),
-                    ValueListenableBuilder(
-                      valueListenable: loading,
-                      builder: (context, value, child) {
-                        return value
-                            ? Column(
-                                children: [
-                                  LinearProgressIndicator(
-                                      value: _progress,
-                                      color: Colors.green,
-                                      backgroundColor: Colors.grey),
-                                  const Text(
-                                    "Uploading Images",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        fontFamily: "Nunito"),
-                                  )
-                                ],
-                              )
-                            : Container();
-                      },
-                    ),
                     const Column(
                       children: [
                         Text("-Attach your Identity Proof",
@@ -269,129 +231,47 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                             child: const Text("Choose File",
                                 style: TextStyle(color: Colors.white)),
                             onPressed: () async {
-                              FilePickerResult? result =
-                                  await FilePicker.platform.pickFiles(
-                                      allowMultiple: true,
-                                      type: FileType.image);
-                              if (result != null) {
-                                loading.value = true;
-                                List<File> files = result.paths
-                                    .map((path) => File(path!))
-                                    .toList();
-                                try {
-                                  for (int i = 0; i < files.length; i++) {
-                                    await _storage
-                                        .ref(
-                                            "${_auth.currentUser!.phoneNumber}")
-                                        .putFile(files[i])
-                                        .whenComplete(() async => {
-                                              await _storage
-                                                  .ref()
-                                                  .storage
-                                                  .ref(
-                                                      "${_auth.currentUser!.phoneNumber}")
-                                                  .getDownloadURL()
-                                                  .then((value) =>
-                                                      {urls.add(value)}),
-                                              setState(() {
-                                                allFiles.add(
-                                                    DateTime.now().toString());
-                                              }),
-                                            });
-                                  }
-
-                                  fileUpload.value = true;
-                                  loading.value = false;
-                                } catch (e) {
-                                  fileUpload.value = false;
-                                }
-                              } else {
-                                // User canceled the picker
+                              if (nameKey.currentState!.validate() &
+                                  groundKey.currentState!.validate()) {
+                                uploadImages();
                               }
                             }),
-                        ValueListenableBuilder(
-                          valueListenable: fileUpload,
-                          builder: (context, value, child) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                  top: MediaQuery.of(context).size.height / 15,
-                                  bottom:
-                                      MediaQuery.of(context).size.height / 15),
-                              child: CupertinoButton(
-                                  color: Colors.green,
-                                  onPressed: value
-                                      ? () async {
-                                          if (nameKey.currentState!.validate() |
-                                              groundKey.currentState!
-                                                  .validate()) {
-                                            setEverything();
-                                          } else {
-                                            Errors.flushBarInform(
-                                                "Field is Missing",
-                                                context,
-                                                "Missing");
-                                          }
-                                        }
-                                      : null,
-                                  child: const Text(
-                                    "Set Slots",
-                                    style: TextStyle(color: Colors.white),
-                                  )),
-                            );
-                          },
-                        )
+                        RegisterDataClass.kycImages.isNotEmpty
+                            ? MaterialButton(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30)),
+                                elevation: 0,
+                                color: Colors.green,
+                                child: const Text("Set Slots",
+                                    style: TextStyle(color: Colors.white)),
+                                onPressed: () async {
+                                  RegisterDataClass.groundName = groundController.value.text;
+                                  RegisterDataClass.personName = nameController.value.text;
+                                  setSlots();
+                                })
+                            : Container(),
                       ],
                     ),
-                    ValueListenableBuilder(
-                      valueListenable: fileUpload,
-                      builder: (context, value, child) {
-                        return value
-                            ? ListView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: allFiles.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    leading: const Icon(Icons.image),
-                                    title: Text(allFiles[index]),
-                                    trailing: InkWell(
-                                        onTap: () {
-                                          _storage
-                                              .ref(
-                                                  "${_auth.currentUser!.phoneNumber}/${allFiles[index]}")
-                                              .delete()
-                                              .whenComplete(() => setState(() {
-                                                    allFiles.removeAt(index);
-                                                    if (allFiles.isEmpty) {
-                                                      fileUpload.value = false;
-                                                    }
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .showSnackBar(SnackBar(
-                                                            duration:
-                                                                const Duration(
-                                                                    seconds: 1),
-                                                            content: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                const Text(
-                                                                    "Deleting"),
-                                                                Platform.isIOS
-                                                                    ? const CupertinoActivityIndicator()
-                                                                    : const CircularProgressIndicator()
-                                                              ],
-                                                            )));
-                                                    Errors.flushBarInform(
-                                                        "Deleted",
-                                                        context,
-                                                        "Success");
-                                                  }));
-                                        },
-                                        child: const Icon(Icons.close)),
-                                  );
+                    ListView.builder(
+                      itemCount: RegisterDataClass.kycImages.length,
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return RegisterDataClass.kycImages.isNotEmpty
+                            ? ListTile(
+                                title: Text(RegisterDataClass.kycImages[index].name.toString()),
+                                leading: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height / 25,
+                                    child:
+                                        Image.file(File(RegisterDataClass.kycImages[index].path))),
+                                onTap: () async {
+                                  setState(() {
+                                    RegisterDataClass.kycImages.removeAt(index);
+                                  });
                                 },
+                                trailing: const Icon(Icons.delete_forever,
+                                    color: Colors.red),
                               )
                             : Container();
                       },
@@ -406,58 +286,20 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
     );
   }
 
-  Future<void> setEverything() async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text("Registering"),
-          CircularProgressIndicator(
-            color: Colors.green,
-            strokeWidth: 1,
-          )
-        ],
-      ),
-      duration: Duration(seconds: 1),
-    ));
-    try {
-      if (_auth.currentUser != null) {
-        String uniqueID = UniqueID.generateRandomString();
-        await _server.collection("SportistanPartners").doc(uniqueID).set({
-          'geo': GeoFirePoint(GeoPoint(widget.latitude, widget.longitude)).data,
-          'locationName': widget.address,
-          'isVerified': false,
-          'groundType': sportTags,
-          'userID': _auth.currentUser!.uid,
-          'groundID': uniqueID,
-          'groundName': groundController.value.text,
-          'kycImageLinks': urls,
-          'groundImages': widget.groundImages,
-          'name': nameController.value.text,
-          'accountCreatedAt':
-              DateFormat('E, d MMMM yyyy HH:mm:ss').format(DateTime.now()),
-        }).then((value) => {
-              _server
-                  .collection("SportistanPartnersProfile")
-                  .doc(_auth.currentUser!.uid)
-                  .collection("Account")
-                  .doc(DateTime.now().toString())
-                  .set({'accountCreatedAt': DateTime.now()}).then((value) => {
-                        PageRouter.pushRemoveUntil(
-                            context,
-                            SlotSettings(
-                              groundName: groundController.value.text,
-                              groundID: uniqueID,
-                            ))
-                      }),
-            });
-      }
-    } catch (e) {
-      if (mounted) {
-        Errors.flushBarInform("Something went wrong", context, "Error");
-      }
+
+  uploadImages() async {
+    final ImagePicker picker = ImagePicker();
+    RegisterDataClass.kycImages = await picker.pickMultiImage(
+      imageQuality: 50,
+    );
+    if (RegisterDataClass.kycImages.isNotEmpty) {
+      setState(() {});
     }
   }
 
-
+  void setSlots() {
+    RegisterDataClass.groundID = UniqueID.generateRandomString();
+    RegisterDataClass.sportsTag =  sportTags.toString();
+    PageRouter.push(context, const SlotSettings());
+  }
 }

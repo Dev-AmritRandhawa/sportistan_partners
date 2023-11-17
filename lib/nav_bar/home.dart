@@ -3,15 +3,20 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/bookings/book_a_slot.dart';
 import 'package:sportistan_partners/bookings/book_entire_day.dart';
+import 'package:sportistan_partners/nav_bar/booking_info.dart';
 import 'package:sportistan_partners/nav_bar/nav_slot_settings.dart';
-import 'package:sportistan_partners/nav_bar/slot_add_settings.dart';
+import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/register_data_class.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -20,7 +25,7 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with WidgetsBindingObserver {
   final PageController _pageController = PageController(initialPage: 0);
   List bookingElements = [];
   List finalAvailabilityList = [];
@@ -46,29 +51,55 @@ class _HomeState extends State<Home> {
 
   List checkEntireDayAvailability = [];
 
+  List<String> refID = [];
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  Future<void> saveToken() async {
+    await _server.collection("DeviceTokens").doc(_auth.currentUser!.uid).set({
+      'token': messaging.getToken().toString(),
+      'userID': _auth.currentUser?.uid,
+      'groundID': groundID[groundIndex],
+    });
+    collectBookings(index: 0);
+  }
+
   Future<void> _futureGroundTypes() async {
-    _server
-        .collection("SportistanPartners")
-        .where("userID", isEqualTo: _auth.currentUser!.uid)
-        .get()
-        .then((value) => {
-              for (int i = 0; i < value.size; i++)
-                {
-                  dropDownList.add(value.docs[i]["groundName"]),
-                  groundID.add(value.docs[i]["groundID"]),
-                  groundAddress.add(
-                    value.docs[i]["locationName"],
-                  ),
-                },
-              dropDownValue = dropDownList[groundIndex],
-            })
-        .then((value) => {collectBookings()});
+    dropDownList.clear();
+    groundID.clear();
+    refID.clear();
+    groundAddress.clear();
+
+      _server
+          .collection("SportistanPartners")
+          .where("userID", isEqualTo: _auth.currentUser!.uid)
+          .get()
+          .then((value) => {
+                if (value.docChanges.isNotEmpty)
+                  {
+                    for (int i = 0; i < value.size; i++)
+                      {
+                        dropDownList.add(value.docs[i]["groundName"]),
+                        groundID.add(value.docs[i]["groundID"]),
+                        refID.add(value.docs[i].id),
+                        groundAddress.add(
+                          value.docs[i]["locationName"],
+                        ),
+                      },
+                    dropDownValue = dropDownList[0],
+                    collectToken()
+                  }
+                else
+                  {
+                    Errors.flushBarInform("Ground not found or may deleted", context, "No Ground Found")
+                  },
+              });
   }
 
   getFilterData(DateTime date) async {
@@ -82,7 +113,17 @@ class _HomeState extends State<Home> {
     collectBookingsWithFilter(date);
   }
 
-  Future<void> collectBookings() async {
+  Future<void> collectBookings({required int index}) async {
+    bookingElements.clear();
+    finalAvailabilityList.clear();
+    bookingList.clear();
+    slotsList.clear();
+    finalAvailabilityList.clear();
+    if (mounted) {
+      setState(() {
+        listShow = false;
+      });
+    }
     try {
       DateTime now = DateTime.now();
       await _server
@@ -91,6 +132,7 @@ class _HomeState extends State<Home> {
               isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
                   .add(const Duration(days: 30)))
           .where('userID', isEqualTo: _auth.currentUser!.uid)
+          .where('groundID', isEqualTo: groundID[index])
           .where("isBookingCancelled", isEqualTo: false)
           .get()
           .then((value) => {
@@ -116,7 +158,6 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
-    finalAvailabilityList.clear();
     _futureGroundTypes();
     super.initState();
   }
@@ -128,7 +169,7 @@ class _HomeState extends State<Home> {
           body: SlidingUpPanel(
         borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-        minHeight: MediaQuery.of(context).size.height / 1.6,
+        minHeight: MediaQuery.of(context).size.height / 1.8,
         maxHeight: MediaQuery.of(context).size.height / 1.6,
         panelBuilder: (sc) => _panel(sc),
         body: SafeArea(
@@ -169,8 +210,6 @@ class _HomeState extends State<Home> {
                                   fontWeight: FontWeight.bold,
                                 ),
                                 items: dropDownList.map((String items) {
-                                  groundIndex =
-                                      dropDownList.indexOf(dropDownValue!);
                                   return DropdownMenuItem(
                                     value: items,
                                     child: Text(items),
@@ -180,7 +219,9 @@ class _HomeState extends State<Home> {
                                   if (dropDownValue != newValue) {
                                     dropDownValue = newValue!;
                                     switchGrounds.value = true;
-                                    collectBookings();
+                                    collectBookings(
+                                        index: dropDownList
+                                            .indexOf(dropDownValue!));
                                   }
                                 },
                               ),
@@ -269,9 +310,10 @@ class _HomeState extends State<Home> {
                             onTap: () {
                               setState(() {
                                 listShow = false;
-                                finalAvailabilityList.clear();
+                                filter.value = true;
+                                switchGrounds.value = true;
                                 filter.value = false;
-                                collectBookings();
+                                _futureGroundTypes();
                               });
                             },
                             child: Row(
@@ -360,20 +402,18 @@ class _HomeState extends State<Home> {
     for (int i = 0; i < 30; i++) {
       DateTime date =
           DateTime(now.year, now.month, now.day).add(Duration(days: i));
-      daySlots = data[DateFormat.EEEE().format(date)];
+      if (data[DateFormat.EEEE().format(date)] != null) {
+        daySlots = data[DateFormat.EEEE().format(date)];
+      } else {
+        daySlots = [];
+        noSlotFounds();
+        break;
+      }
+
       for (int j = 0; j < daySlots.length; j++) {
-        if (daySlots.isEmpty) {
-          if (mounted) {
-            PageRouter.push(
-                context,
-                SlotAddSettings(
-                  day: DateFormat.EEEE().format(date),
-                ));
-          }
-        } else {
+
           slotsList.add(data[DateFormat.EEEE().format(date)][j]["slotID"] +
               date.toString());
-        }
       }
     }
     for (int l = 0; l < bookingList.length; l++) {
@@ -407,7 +447,13 @@ class _HomeState extends State<Home> {
     for (int i = 0; i < 30; i++) {
       DateTime date =
           DateTime(now.year, now.month, now.day).add(Duration(days: i));
-      daySlots = slotsElements[DateFormat.EEEE().format(date)];
+      if (slotsElements[DateFormat.EEEE().format(date)] != null) {
+        daySlots = slotsElements[DateFormat.EEEE().format(date)];
+      } else {
+        daySlots = [];
+        noSlotFounds();
+        break;
+      }
       for (int j = 0; j < daySlots.length; j++) {
         String uniqueID = slotsElements[DateFormat.EEEE().format(date)][j]
                 ["slotID"] +
@@ -445,22 +491,18 @@ class _HomeState extends State<Home> {
   }
 
   reInit() {
-    finalAvailabilityList.clear();
-    bookingElements.clear();
-    finalAvailabilityList.clear();
-    bookingList.clear();
-    slotsList.clear();
-    groundID.clear();
-    dropDownList.clear();
-    groundAddress.clear();
-    switchGrounds.value = false;
-    setState(() {
-      listShow = false;
-    });
     _futureGroundTypes();
   }
 
   Future<void> collectBookingsWithFilter(DateTime now) async {
+    bookingElements.clear();
+    finalAvailabilityList.clear();
+    bookingList.clear();
+    slotsList.clear();
+    finalAvailabilityList.clear();
+    setState(() {
+      listShow = false;
+    });
     await _server
         .collection("GroundBookings")
         .where("bookingCreated",
@@ -499,7 +541,12 @@ class _HomeState extends State<Home> {
     var docSnapshot = await collection.doc(groundID[groundIndex]).get();
     Map<String, dynamic> data = docSnapshot.data()!;
     slotsElements = data;
-    daySlots = data[DateFormat.EEEE().format(date)];
+    if (data[DateFormat.EEEE().format(date)] != null) {
+      daySlots = data[DateFormat.EEEE().format(date)];
+    } else {
+      daySlots = [];
+      noSlotFounds();
+    }
     for (int j = 0; j < daySlots.length; j++) {
       slotsList.add(
           data[DateFormat.EEEE().format(date)][j]["slotID"] + date.toString());
@@ -532,7 +579,12 @@ class _HomeState extends State<Home> {
 
   void availableFilterSlots(DateTime date) {
     var daySlots = [];
-    daySlots = slotsElements[DateFormat.EEEE().format(date)];
+    if (slotsElements[DateFormat.EEEE().format(date)] != null) {
+      daySlots = slotsElements[DateFormat.EEEE().format(date)];
+    } else {
+      daySlots = [];
+      noSlotFounds();
+    }
     for (int j = 0; j < daySlots.length; j++) {
       String uniqueID = slotsElements[DateFormat.EEEE().format(date)][j]
               ["slotID"] +
@@ -570,6 +622,7 @@ class _HomeState extends State<Home> {
                   itemBuilder: (BuildContext context, int index) {
                     String group = groupedItems.keys.elementAt(index);
                     List bookingGroup = groupedItems[group]!;
+
                     return Card(
                       child: Column(
                         children: [
@@ -593,7 +646,7 @@ class _HomeState extends State<Home> {
                                         NavSlotSettings(
                                           day: DateFormat.EEEE()
                                               .format(DateTime.parse(group)),
-                                          groundID: groundID[groundIndex],
+                                          refID: refID[groundIndex],
                                         ));
                                   },
                                   child: const Text("EDIT",
@@ -631,92 +684,8 @@ class _HomeState extends State<Home> {
                                                   width: 2),
                                             ),
                                             onPressed: () {
-                                              if (bookings.slotStatus ==
-                                                  "Half Booked") {
-                                                PageRouter.push(
-                                                    context,
-                                                    BookASlot(
-                                                      group: bookings.group,
-                                                      date: bookings.date,
-                                                      slotID: bookings.slotID,
-                                                      slotTime:
-                                                          bookings.slotTime,
-                                                      slotStatus:
-                                                          bookings.slotStatus,
-                                                      groundID: groundID,
-                                                      groundAddress:
-                                                          groundAddress,
-                                                      groundName: dropDownList,
-                                                      groundIndex: groundIndex,
-                                                      bookingID:
-                                                          bookings.bookingID,
-                                                      slotPrice:
-                                                          bookings.slotPrice,
-                                                    ));
-                                              } else {
-                                                if (Platform.isIOS) {
-                                                  Navigator.push(
-                                                      context,
-                                                      CupertinoPageRoute(
-                                                          builder: (context) =>
-                                                              BookASlot(
-                                                                group: bookings
-                                                                    .group,
-                                                                date: bookings
-                                                                    .date,
-                                                                slotID: bookings
-                                                                    .slotID,
-                                                                slotTime: bookings
-                                                                    .slotTime,
-                                                                slotStatus: bookings
-                                                                    .slotStatus,
-                                                                groundID:
-                                                                    groundID,
-                                                                groundAddress:
-                                                                    groundAddress,
-                                                                groundName:
-                                                                    dropDownList,
-                                                                groundIndex:
-                                                                    groundIndex,
-                                                                bookingID: bookings
-                                                                    .bookingID,
-                                                                slotPrice: bookings
-                                                                    .slotPrice,
-                                                              ))).then(
-                                                      (value) => {reInit()});
-                                                }
-                                                if (Platform.isAndroid) {
-                                                  Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              BookASlot(
-                                                                bookingID: bookings
-                                                                    .bookingID,
-                                                                group: bookings
-                                                                    .group,
-                                                                date: bookings
-                                                                    .date,
-                                                                slotID: bookings
-                                                                    .slotID,
-                                                                slotTime: bookings
-                                                                    .slotTime,
-                                                                slotStatus: bookings
-                                                                    .slotStatus,
-                                                                groundID:
-                                                                    groundID,
-                                                                groundAddress:
-                                                                    groundAddress,
-                                                                groundName:
-                                                                    dropDownList,
-                                                                groundIndex:
-                                                                    groundIndex,
-                                                                slotPrice: bookings
-                                                                    .slotPrice,
-                                                              ))).then(
-                                                      (value) => {reInit()});
-                                                }
-                                              }
+                                              checkStatusSlotAndMove(
+                                                  bookings: bookings);
                                             },
                                             child: Text(
                                               bookings.slotTime,
@@ -809,6 +778,8 @@ class _HomeState extends State<Home> {
                                               BookEntireDay(
                                                 date: group,
                                                 groundID: groundID[groundIndex],
+                                                groundName:
+                                                    dropDownList[groundIndex],
                                               ));
                                         },
                                         child: const Text(
@@ -837,6 +808,57 @@ class _HomeState extends State<Home> {
         ],
       ),
     );
+  }
+
+  Future<void> groundStateSave(String id) async {
+    final data = await SharedPreferences.getInstance();
+    data.setString("groundID", id);
+  }
+
+  noSlotFounds() async {
+    await groundStateSave(groundID[groundIndex].toString());
+    if (mounted) {
+      PageRouter.pushRemoveUntil(context, const SlotSettings());
+    }
+  }
+
+  void checkStatusSlotAndMove({required MyBookings bookings}) {
+    switch (bookings.slotStatus) {
+      case "Half Booked":
+        {
+          moveToPages(bookings: bookings);
+        }
+      case "Available":
+        {
+          moveToPages(bookings: bookings);
+        }
+        case "Booked":
+        {
+          PageRouter.push(context, BookingInfo(bookingID: bookings.bookingID));
+        }
+    }
+  }
+
+  moveToPages({required MyBookings bookings}) {
+    PageRouter.push(
+        context,
+        BookASlot(
+          group: bookings.group,
+          date: bookings.date,
+          slotID: bookings.slotID,
+          slotTime: bookings.slotTime,
+          slotStatus: bookings.slotStatus,
+          groundID: groundID[groundIndex],
+          groundAddress: groundAddress[groundIndex],
+          groundName: dropDownList[groundIndex],
+          bookingID: bookings.bookingID,
+          slotPrice: bookings.slotPrice,
+        )).then((value) => {reInit()});
+  }
+
+  collectToken() async {
+    await saveToken();
+
   }
 }
 

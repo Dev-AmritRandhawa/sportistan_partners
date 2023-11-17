@@ -1,9 +1,9 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:sliding_clipped_nav_bar/sliding_clipped_nav_bar.dart';
-
 import 'package:sportistan_partners/nav_bar/bookings.dart';
 import 'package:sportistan_partners/nav_bar/home.dart';
-import 'package:sportistan_partners/nav_bar/profile.dart';
+import 'package:sportistan_partners/nav_bar/profile_edit/profile.dart';
 
 class NavHome extends StatefulWidget {
   const NavHome({super.key});
@@ -16,10 +16,25 @@ class _NavHomeState extends State<NavHome> {
   late PageController _pageController;
   int selectedIndex = 0;
 
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: selectedIndex);
+    setupInteractedMessage();
+  }
+
+  Future<void> setupInteractedMessage() async {
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    onButtonPressed(1);
   }
 
   void onButtonPressed(int index) {
@@ -59,7 +74,6 @@ class _NavHomeState extends State<NavHome> {
             icon: Icons.calendar_today,
             title: 'My Bookings',
           ),
-
           BarItem(
             icon: Icons.account_circle,
             title: 'Profile',
@@ -72,7 +86,6 @@ class _NavHomeState extends State<NavHome> {
   final List<Widget> _listOfWidget = <Widget>[
     const Home(),
     const Bookings(),
-
     const Profile()
   ];
 }

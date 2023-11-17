@@ -6,13 +6,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
-import 'package:flutter_share/flutter_share.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:share/share.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:sportistan_partners/nav_bar/nav_home.dart';
+import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/send_cloud_message.dart';
 
 class BookingInfo extends StatefulWidget {
   final String bookingID;
@@ -23,9 +25,7 @@ class BookingInfo extends StatefulWidget {
   State<BookingInfo> createState() => _BookingInfoState();
 }
 
-class _BookingInfoState extends State<BookingInfo>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+class _BookingInfoState extends State<BookingInfo> {
 
   PanelController pc = PanelController();
   String? bookingType;
@@ -48,25 +48,25 @@ class _BookingInfoState extends State<BookingInfo>
   String? refDetails;
 
   String? userID;
+  String? slot;
+  String? groundName;
+
+  String? token;
+
+  String? date;
 
   @override
   void dispose() {
-    _server.terminate();
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
-    _server.enableNetwork();
-    _controller = AnimationController(vsync: this);
     super.initState();
   }
 
   final _server = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
-  int counter = 0;
-  late Uint8List? imageFile;
 
   ScreenshotController screenshotController = ScreenshotController();
 
@@ -96,486 +96,376 @@ class _BookingInfoState extends State<BookingInfo>
                       bookingType = doc['bookingPerson'];
                       refDetails = doc.id;
                       userID = doc['userID'];
-
+                      groundName = doc['groundName'];
+                      slot = doc['slotTime'];
                       if (!doc["ratingGiven"]) {
                         pc.open();
                       }
                       Timestamp time = doc['bookedAt'];
 
                       Timestamp day = doc['bookingCreated'];
+                      date = DateFormat.MMMMEEEEd()
+                          .format(day.toDate());
                       DateTime booked = time.toDate();
                       bool isTeamBAvailable = doc["bothTeamBooked"];
                       return Screenshot(
                         controller: screenshotController,
-                        child: Column(children: [
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
+                        child: Container(
+                          color: Colors.white,
+                          child: Column(
+                            children: [
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "Booking ID",
+                                        style: TextStyle(
+                                            fontFamily: "DMSans",
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                50),
+                                      ),
+                                      Text(
+                                        doc["bookingID"],
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: "DMSans",
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                50),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  left: MediaQuery.of(context).size.width / 20,
+                                  right: MediaQuery.of(context).size.width / 20,
+                                  top: MediaQuery.of(context).size.width / 20,
+                                ),
+                                child: Image.asset(
+                                  "assets/logo.png",
+                                  width: MediaQuery.of(context).size.width / 15,
+                                  height:
+                                      MediaQuery.of(context).size.width / 15,
+                                ),
+                              ),
+                              doc["ratingGiven"]
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          const Text("Rating",
+                                              style: TextStyle(
+                                                fontFamily: "DMSans",
+                                              )),
+                                          RatingBar.builder(
+                                            itemSize: MediaQuery.of(context)
+                                                    .size
+                                                    .height /
+                                                40,
+                                            // initialRating: 3.0, pending chane
+                                            initialRating: 3.0,
+                                            direction: Axis.horizontal,
+                                            itemCount: 5,
+                                            ignoreGestures: true,
+                                            itemPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 4.0),
+                                            itemBuilder: (context, _) =>
+                                                const Icon(
+                                              Icons.star,
+                                              color: Colors.amber,
+                                            ),
+                                            onRatingUpdate: (rating) {},
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              pc.open();
+                                            },
+                                            child: const Text("Edit",
+                                                style: TextStyle(
+                                                  fontFamily: "DMSans",
+                                                )),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: CupertinoButton(
+                                          onPressed: () {
+                                            pc.open();
+                                          },
+                                          child: const Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.star,
+                                                color: Colors.orange,
+                                              ),
+                                              Text(
+                                                "Rate Booking",
+                                                style: TextStyle(
+                                                    color: Colors.black54),
+                                              ),
+                                            ],
+                                          )),
+                                    ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  const Text("Booking Generate : "),
                                   Text(
-                                    "Booking ID",
-                                    style: TextStyle(
-                                        fontFamily: "DMSans",
-                                        fontSize:
-                                            MediaQuery.of(context).size.height /
-                                                50),
-                                  ),
-                                  Text(
-                                    doc["bookingID"],
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: "DMSans",
-                                        fontSize:
-                                            MediaQuery.of(context).size.height /
-                                                50),
-                                  ),
+                                      "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
                                 ],
                               ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: MediaQuery.of(context).size.width / 20,
-                              right: MediaQuery.of(context).size.width / 20,
-                              top: MediaQuery.of(context).size.width / 20,
-                            ),
-                            child: Image.asset(
-                              "assets/logo.png",
-                              width: MediaQuery.of(context).size.width / 15,
-                              height: MediaQuery.of(context).size.width / 15,
-                            ),
-                          ),
-                          doc["ratingGiven"]
-                              ? Padding(
-                                  padding: const EdgeInsets.all(8.0),
+                              Card(
+                                child: Padding(
+                                  padding: EdgeInsets.all(
+                                    MediaQuery.of(context).size.width / 20,
+                                  ),
                                   child: Row(
                                     mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
+                                        MainAxisAlignment.spaceAround,
                                     children: [
-                                      const Text("Rating",
-                                          style: TextStyle(
-                                            fontFamily: "DMSans",
-                                          )),
-                                      RatingBar.builder(
-                                        itemSize:
-                                            MediaQuery.of(context).size.height /
-                                                40,
-                                        // initialRating: 3.0, pending chane
-                                        initialRating: 3.0,
-                                        direction: Axis.horizontal,
-                                        itemCount: 5,
-                                        ignoreGestures: true,
-                                        itemPadding: const EdgeInsets.symmetric(
-                                            horizontal: 4.0),
-                                        itemBuilder: (context, _) => const Icon(
-                                          Icons.star,
-                                          color: Colors.amber,
-                                        ),
-                                        onRatingUpdate: (rating) {},
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          pc.open();
-                                        },
-                                        child: const Text("Edit",
-                                            style: TextStyle(
-                                              fontFamily: "DMSans",
-                                            )),
-                                      )
-                                    ],
-                                  ),
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: CupertinoButton(
-                                      onPressed: () {
-                                        pc.open();
-                                      },
-                                      child: const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                      Row(
                                         children: [
-                                          Icon(
-                                            Icons.star,
-                                            color: Colors.orange,
+                                          const Text(
+                                            "Slot : ",
                                           ),
                                           Text(
-                                            "Rate Booking",
-                                            style: TextStyle(
-                                                color: Colors.black54),
+                                            doc["slotTime"],
+                                            style: const TextStyle(
+                                                fontFamily: "DMSans",
+                                                fontWeight: FontWeight.bold),
+                                          )
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Text("Booking Day : "),
+                                          Text(
+                                            DateFormat.MMMMEEEEd()
+                                                .format(day.toDate()),
+                                            style: const TextStyle(
+                                                fontFamily: "DMSans",
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ],
-                                      )),
-                                ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text("Booking Generate : "),
-                              Text(
-                                  "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Card(
-                            child: Padding(
-                              padding: EdgeInsets.all(
-                                MediaQuery.of(context).size.width / 20,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "Slot : ",
                                       ),
-                                      Text(
-                                        doc["slotTime"],
-                                        style: const TextStyle(
-                                            fontFamily: "DMSans",
-                                            fontWeight: FontWeight.bold),
-                                      )
                                     ],
                                   ),
-                                  Row(
-                                    children: [
-                                      const Text("Booking Day : "),
-                                      Text(
-                                        DateFormat.MMMMEEEEd()
-                                            .format(day.toDate()),
-                                        style: const TextStyle(
-                                            fontFamily: "DMSans",
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(
+                                  MediaQuery.of(context).size.width / 20,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text("Advance Received : ",
+                                            style:
+                                                TextStyle(color: Colors.green)),
+                                        Text(
+                                          "Rs. ${doc["advancePayment"]}",
+                                          style: const TextStyle(
+                                              fontFamily: "DMSans",
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text("Slot Amount : "),
+                                        Text(
+                                          "Rs. ${doc["slotPrice"]}",
+                                          style: const TextStyle(
+                                              fontFamily: "DMSans",
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text("Fees Due : "),
+                                  Text(
+                                    "Rs. ${doc["feesDue"]}",
+                                    style: TextStyle(
+                                        color: Colors.red.shade200,
+                                        fontFamily: "DMSans",
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.width / 20,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text("Advance Received : ",
-                                        style: TextStyle(color: Colors.green)),
-                                    Text(
-                                      "Rs. ${doc["advancePayment"]}",
-                                      style: const TextStyle(
-                                          fontFamily: "DMSans",
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold),
-                                    )
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const Text("Slot Amount : "),
-                                    Text(
-                                      "Rs. ${doc["slotPrice"]}",
-                                      style: const TextStyle(
-                                          fontFamily: "DMSans",
-                                          fontWeight: FontWeight.bold),
+                              Card(
+                                child: Column(children: [
+                                  const Card(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text("Team A"),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text("Fees Due : "),
-                              Text(
-                                "Rs. ${doc["feesDue"]}",
-                                style: TextStyle(
-                                    color: Colors.red.shade200,
-                                    fontFamily: "DMSans",
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          Card(
-                            child: Column(children: [
-                              const Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text("Team A"),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text("Team Name :"),
-                                    Text(doc["teamA"]["teamName"],
-                                        style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "DMSans")),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text("Contact Number :"),
-                                    Text(doc["teamA"]["phoneNumber"],
-                                        style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "DMSans")),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text("Contact Name :"),
-                                    Text(doc["teamA"]["personName"],
-                                        style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "DMSans")),
-                                    Text(doc["teamA"]["notesTeamA"],
-                                        style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "DMSans")),
-                                  ],
-                                ),
-                              ),
-                            ]),
-                          ),
-                          isTeamBAvailable
-                              ? Card(
-                                  child: Column(children: [
-                                    const Card(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text("Team B"),
-                                      ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Team Name :"),
+                                        Text(doc["teamA"]["teamName"],
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: "DMSans")),
+                                      ],
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          const Text("Team Name :"),
-                                          Text(doc["teamB"]["teamName"],
-                                              style: const TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontFamily: "DMSans")),
-                                        ],
-                                      ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Contact Number :"),
+                                        Text(doc["teamA"]["phoneNumber"],
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: "DMSans")),
+                                      ],
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          const Text("Contact Number :"),
-                                          Text(doc["teamB"]["phoneNumber"],
-                                              style: const TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontFamily: "DMSans")),
-                                        ],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          const Text("Contact Name :"),
-                                          Text(doc["teamB"]["personName"],
-                                              style: const TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontFamily: "DMSans")),
-                                        ],
-                                      ),
-                                    ),
-                                  ]),
-                                )
-                              : Container(),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height / 5,
-                            width: MediaQuery.of(context).size.height / 5,
-                            child: Lottie.asset(
-                              "assets/checkMark.json",
-                              controller: _controller,
-                              onLoaded: (composition) {
-                                _controller
-                                  ..duration = composition.duration
-                                  ..repeat();
-                              },
-                            ),
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CupertinoButton(
-                                  color: Colors.indigo,
-                                  onPressed: () {
-                                    takeScreenshot();
-                                  },
-                                  child: const Text("Share Booking"))),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: CupertinoButton(
-                              color: Colors.green,
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Go Home"),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: CupertinoButton(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (ctx) => Platform.isAndroid
-                                        ? AlertDialog(
-                                            content: const Text(
-                                                "Would you like to cancel booking?",
-                                                style: TextStyle(
-                                                    color: Colors.black54,
-                                                    fontFamily: "DMSans")),
-                                            title: const Text("Cancel Booking",
-                                                style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontFamily: "DMSans")),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () async {
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Contact Name :"),
+                                        Text(doc["teamA"]["personName"],
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: "DMSans")),
 
-                                                  await _server
-                                                        .collection("GroundBookings")
-                                                        .doc(refDetails)
-                                                        .update({
-                                                      'isBookingCancelled': true
-                                                    }).whenComplete(() => {
-                                                              if (mounted)
-                                                                {
-                                                                  ScaffoldMessenger.of(
-                                                                          context)
-                                                                      .showSnackBar(
-                                                                    const SnackBar(
-                                                                      content: Text(
-                                                                          "Cancelled"),
-                                                                      backgroundColor:
-                                                                          Colors
-                                                                              .red,
-                                                                    ),
-                                                                  ),
-                                                                  Navigator.pop(
-                                                                      ctx),
-                                                                  Navigator.pop(
-                                                                      context),
-                                                                }
-                                                            });
-                                                  },
-                                                  child: const Text(
-                                                      "Cancel Booking",
-                                                      style: TextStyle(
-                                                          color: Colors.red,
-                                                          fontFamily:
-                                                              "DMSans"))),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                  },
-                                                  child: const Text("No",
-                                                      style: TextStyle(
-                                                          color: Colors.black54,
-                                                          fontFamily:
-                                                              "DMSans"))),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    const number =
-                                                        '+918591719905'; //set the number here
-                                                    FlutterPhoneDirectCaller
-                                                        .callNumber(number);
-                                                  },
-                                                  child: const Text(
-                                                      "Call Customer Support",
-                                                      style: TextStyle(
-                                                          color: Colors.green,
-                                                          fontFamily:
-                                                              "DMSans"))),
-                                            ],
-                                          )
-                                        : CupertinoAlertDialog(
-                                            content: const Text(
-                                                "Would you like to cancel booking?",
-                                                style: TextStyle(
-                                                    color: Colors.black54,
-                                                    fontFamily: "DMSans")),
-                                            title: const Text("Cancel Booking",
-                                                style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontFamily: "DMSans")),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () {},
-                                                  child: const Text(
-                                                      "Cancel Booking",
-                                                      style: TextStyle(
-                                                          color: Colors.red,
-                                                          fontFamily:
-                                                              "DMSans"))),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                  },
-                                                  child: const Text("No",
-                                                      style: TextStyle(
-                                                          color: Colors.black54,
-                                                          fontFamily:
-                                                              "DMSans"))),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    const number =
-                                                        '+918591719905'; //set the number here
-                                                    FlutterPhoneDirectCaller
-                                                        .callNumber(number);
-                                                  },
-                                                  child: const Text(
-                                                      "Call Customer Support",
-                                                      style: TextStyle(
-                                                          color: Colors.green,
-                                                          fontFamily:
-                                                              "DMSans"))),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Notes : "),
+
+                                        Text(doc["teamA"]["notesTeamA"],
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontFamily: "DMSans")),
+                                      ],
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                              isTeamBAvailable
+                                  ? Card(
+                                      child: Column(children: [
+                                        const Card(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text("Team B"),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const Text("Team Name :"),
+                                              Text(doc["teamB"]["teamName"],
+                                                  style: const TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily: "DMSans")),
                                             ],
                                           ),
-                                  );
-                                },
-                                child: const Text(
-                                  "Cancel Booking",
-                                  style: TextStyle(color: Colors.red),
-                                )),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const Text("Contact Number :"),
+                                              Text(doc["teamB"]["phoneNumber"],
+                                                  style: const TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily: "DMSans")),
+                                            ],
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const Text("Contact Name :"),
+                                              Text(doc["teamB"]["personName"],
+                                                  style: const TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily: "DMSans")),
+                                            ],
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                            children: [
+                                              const Text("Notes : "),
+
+                                              Text(doc["teamB"]["notesTeamB"],
+                                                  style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontFamily: "DMSans")),
+                                            ],
+                                          ),
+                                        ),
+                                      ]),
+                                    )
+                                  : Container(),
+                            ],
                           ),
-                        ]),
+                        ),
                       );
                     },
                   );
@@ -585,6 +475,135 @@ class _BookingInfoState extends State<BookingInfo>
                   );
                 }
               },
+            ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(
+                "Booking Confirmed",
+                style: TextStyle(
+                    color: Colors.green, fontSize: 22, fontFamily: "DMSaNS"),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: CupertinoButton(
+                    color: Colors.green,
+                    onPressed: () {
+                      PageRouter.pushRemoveUntil(context, const NavHome());
+                    },
+                    child: const Text("Home"),
+                  ),
+                ),
+                Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CupertinoButton(
+                        color: Colors.indigo,
+                        onPressed: () {
+                          takeScreenshot();
+                        },
+                        child: const Text("Share"))),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CupertinoButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => Platform.isAndroid
+                          ? AlertDialog(
+                              content: const Text(
+                                  "Would you like to cancel booking?",
+                                  style: TextStyle(
+                                      color: Colors.black54,
+                                      fontFamily: "DMSans")),
+                              title: const Text("Cancel Booking",
+                                  style: TextStyle(
+                                      color: Colors.red, fontFamily: "DMSans")),
+                              actions: [
+                                TextButton(
+                                    onPressed: () async {
+                                      await _server
+                                          .collection("GroundBookings")
+                                          .doc(refDetails)
+                                          .update({
+                                        'isBookingCancelled': true
+                                      }).then((value) async => {
+                                                Navigator.pop(ctx),
+                                                sendNotification(),
+                                              });
+                                    },
+                                    child: const Text("Cancel Booking",
+                                        style: TextStyle(
+                                            color: Colors.red,
+                                            fontFamily: "DMSans"))),
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                    },
+                                    child: const Text("No",
+                                        style: TextStyle(
+                                            color: Colors.black54,
+                                            fontFamily: "DMSans"))),
+                                TextButton(
+                                    onPressed: () {
+                                      const number =
+                                          '+918591719905'; //set the number here
+                                      FlutterPhoneDirectCaller.callNumber(
+                                          number);
+                                    },
+                                    child: const Text("Call Customer Support",
+                                        style: TextStyle(
+                                            color: Colors.green,
+                                            fontFamily: "DMSans"))),
+                              ],
+                            )
+                          : CupertinoAlertDialog(
+                              content: const Text(
+                                  "Would you like to cancel booking?",
+                                  style: TextStyle(
+                                      color: Colors.black54,
+                                      fontFamily: "DMSans")),
+                              title: const Text("Cancel Booking",
+                                  style: TextStyle(
+                                      color: Colors.red, fontFamily: "DMSans")),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {},
+                                    child: const Text("Cancel Booking",
+                                        style: TextStyle(
+                                            color: Colors.red,
+                                            fontFamily: "DMSans"))),
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                    },
+                                    child: const Text("No",
+                                        style: TextStyle(
+                                            color: Colors.black54,
+                                            fontFamily: "DMSans"))),
+                                TextButton(
+                                    onPressed: () {
+                                      const number =
+                                          '+918591719905'; //set the number here
+                                      FlutterPhoneDirectCaller.callNumber(
+                                          number);
+                                    },
+                                    child: const Text("Call Customer Support",
+                                        style: TextStyle(
+                                            color: Colors.green,
+                                            fontFamily: "DMSans"))),
+                              ],
+                            ),
+                    );
+                  },
+                  child: const Text(
+                    "Cancel Booking",
+                    style: TextStyle(color: Colors.red),
+                  )),
             ),
           ]),
         ),
@@ -613,10 +632,18 @@ class _BookingInfoState extends State<BookingInfo>
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                Text("How was your experience?",
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("How was your experience?",
+                      style: TextStyle(
+                          fontFamily: "DMSans",
+                          fontSize: MediaQuery.of(context).size.height / 40)),
+                ),
+                Text("Please Give rating after match end. So help you in future bookings.",
+                 textAlign: TextAlign.center,
                     style: TextStyle(
                         fontFamily: "DMSans",
-                        fontSize: MediaQuery.of(context).size.height / 40)),
+                        fontSize: MediaQuery.of(context).size.height / 50)),
                 RatingBar.builder(
                   initialRating: 3.5,
                   minRating: 1,
@@ -632,6 +659,7 @@ class _BookingInfoState extends State<BookingInfo>
                     if (rating <= 3.0) {
                       updateRating = rating;
                       ratingListenable.value = true;
+
                     } else {
                       updateRating = rating;
                       ratingListenable.value = false;
@@ -675,55 +703,52 @@ class _BookingInfoState extends State<BookingInfo>
           CupertinoButton(
               color: Colors.green,
               onPressed: () async {
-                _server
-                    .collection("GroundBookings").doc(refDetails)
-                    .update({
+                _server.collection("GroundBookings").doc(refDetails).update({
                   'ratingGiven': true,
                   'rating': updateRating,
                   'ratingTags': ratingTags
-                }).then((value) => {
-                  pc.close(), if (userID != _auth.currentUser!.uid) {}
-                });
+                }).then((value) =>
+                    {pc.close(), if (userID != _auth.currentUser!.uid) {
+
+                    }});
               },
               child: const Text("Submit")),
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 4,
-            width: MediaQuery.of(context).size.height / 4,
-            child: Lottie.asset(
-              "assets/rating.json",
-              controller: _controller,
-              onLoaded: (composition) {
-                _controller
-                  ..duration = composition.duration
-                  ..repeat();
-              },
-            ),
-          ),
         ],
       ),
     );
   }
 
-  void takeScreenshot() {
-    screenshotController
-        .capture()
-        .then((value) => {imageFile = value, saveImage()});
-  }
-
-  saveImage() async {
+  Future<void> takeScreenshot() async {
     await screenshotController
         .capture(delay: const Duration(milliseconds: 10))
-        .then((value) async {
-      if (value != null) {
+        .then((Uint8List? image) async {
+      if (image != null) {
         final directory = await getApplicationDocumentsDirectory();
         final imagePath = await File('${directory.path}/image.png').create();
-        await imagePath.writeAsBytes(value);
-
-        await FlutterShare.shareFile(
-          title: "Booking Receipt",
-          filePath: imagePath.path,
-        );
+        await imagePath.writeAsBytes(image);
+        await Share.shareFiles([imagePath.path]);
       }
     });
+  }
+
+  sendNotification() async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Updating"),
+      duration: Duration(seconds: 1),
+    ));
+
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _server
+        .collection("DeviceTokens")
+        .where("userID", isEqualTo: userID)
+        .get();
+
+    final token = snapshot.docs[0].get("token");
+    FirebaseCloudMessaging.sendPushMessage(
+        "$groundName Booking is Cancelled of Slot $slot and Date $date",
+        "Booking Cancelled",
+        token);
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 }

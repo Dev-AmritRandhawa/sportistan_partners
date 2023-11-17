@@ -3,9 +3,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
-  'my_channel', // id
-  'My Channel', // title
-  importance: Importance.high,
+  'high_importance_channel', // id
+  'High Importance Notifications', // title
+  importance: Importance.max,
 );
 
 class Notifications {
@@ -41,4 +41,5 @@ class Notifications {
           ));
         });
   }
+
 }

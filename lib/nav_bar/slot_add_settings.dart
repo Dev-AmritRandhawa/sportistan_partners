@@ -1,18 +1,25 @@
-import 'package:delayed_display/delayed_display.dart';
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/register_data_class.dart';
 
 class SlotAddSettings extends StatefulWidget {
   final String day;
 
-  const SlotAddSettings({super.key, required this.day});
+  const SlotAddSettings({
+    super.key,
+    required this.day,
+  });
 
   @override
   SlotAddSettingsState createState() => SlotAddSettingsState();
@@ -24,19 +31,28 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
   var mailTECs = <int, TextEditingController>{};
 
   var item = <int, Widget>{};
-
-  GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final _server = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  ValueNotifier<bool> listLoad = ValueNotifier<bool>(true);
+
+  int onwardsAmount = 0;
+
+  final _storage = FirebaseStorage.instance;
+
+
+
 
   @override
   void initState() {
-    _server.enableNetwork();
+getSlots();
     super.initState();
   }
 
+
   @override
   void dispose() {
-    _server.terminate();
     super.dispose();
   }
 
@@ -46,11 +62,15 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       var name = nameTECs[i]?.value.text;
       var name2 = nameTECs2[i]?.value.text;
       var mail = mailTECs[i]?.value.text;
-      if (name != null && mail != null) {
+      if (name != null && mail != null && name2 != null) {
         DataSave.entries.add(Entry(
-            email: mail.toString(),
             name: name.toString(),
-            name2: name2.toString()));
+            name2: name2.toString(),
+            email: mail.toString()));
+        onwardsAmount = int.parse(mailTECs[i]!.value.text);
+        if(int.parse(mailTECs[i]!.value.text) > onwardsAmount){
+          onwardsAmount = int.parse(mailTECs[i]!.value.text);
+        }
       }
     }
     await setSlot();
@@ -119,7 +139,8 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                     onTap: () async {
                       TimeOfDay? tod = await showTimePicker(
                         context: context,
-                        initialTime: TimeOfDay.now(),
+                        initialTime: TimeOfDay.fromDateTime(
+                            DateTime.now().add(const Duration(hours: 2))),
                       );
                       if (tod != null) {
                         nameController2.text = formatTimeOfDay(tod);
@@ -155,6 +176,8 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Set Slot Price";
+                  } else if (int.parse(value) < 99) {
+                    return "Invalid Slot Price";
                   } else {
                     return null;
                   }
@@ -191,6 +214,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
               setState(() {
                 item.removeWhere((key, value) => key == index);
                 nameTECs.removeWhere((key, value) => key == index);
+                nameTECs2.removeWhere((key, value) => key == index);
                 mailTECs.removeWhere((key, value) => key == index);
               });
             },
@@ -204,122 +228,100 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
-      appBar: AppBar(
-          backgroundColor: Colors.white,
-          centerTitle: true,
-          title: Text(
-            widget.day,
-            style: const TextStyle(fontFamily: "DMSans", color: Colors.black54),
-          )),
-      bottomNavigationBar: item.isNotEmpty
-          ? CupertinoButton(
-              borderRadius: BorderRadius.zero,
-              color: Colors.green.shade800,
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  ondDone();
-                }
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  const Icon(Icons.save),
-                  Text("Save Slots for ${widget.day}"),
-                ],
-              ),
-            )
-          : CupertinoButton(
-              borderRadius: BorderRadius.zero,
-              color: Colors.green,
-              onPressed: () {
-                setState(() {
-                  item.addAll({0: newMethod(context, 0)});
-                });
-              },
-              child: const Text('Add Slot + ',
-                  style: TextStyle(fontFamily: "DMSans", color: Colors.white)),
-            ),
-      body: item.isEmpty
-          ? DelayedDisplay(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        appBar: AppBar(
+            foregroundColor: Colors.black87,
+            backgroundColor: Colors.white,
+            centerTitle: true,
+            title: Text(
+              widget.day,
+              style:
+                  const TextStyle(fontFamily: "DMSans", color: Colors.black54),
+            )),
+        bottomNavigationBar: item.isNotEmpty
+            ? CupertinoButton(
+                borderRadius: const BorderRadius.all(Radius.zero),
+                color: Colors.green.shade800,
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    ondDone();
+
+                  }
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text("Add Your Slots",
-                          style: TextStyle(
-                              fontFamily: "DMSans",
-                              fontWeight: FontWeight.bold,
-                              fontSize:
-                                  MediaQuery.of(context).size.height / 40)),
-                    ),
-                    Flexible(
-                      child: Image.asset(
-                        "assets/slot.png",
-                        height: MediaQuery.of(context).size.height / 3,
-                        width: MediaQuery.of(context).size.height / 3,
+                    const Icon(Icons.save),
+                    Text("Save Slots for ${widget.day}"),
+                  ],
+                ),
+              )
+            : CupertinoButton(
+                borderRadius: const BorderRadius.all(Radius.zero),
+                color: Colors.indigo,
+                onPressed: () {
+                  setState(() {
+                    item.addAll({0: newMethod(context, 0)});
+                  });
+                },
+                child: const Text("Add Slot",
+                    style: TextStyle(fontFamily: "DMSans")),
+              ),
+        body: ValueListenableBuilder(
+          valueListenable: listLoad,
+          builder: (context, value, child) {
+            return listLoad.value
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        strokeWidth: 1, color: Colors.green),
+                  )
+                : SingleChildScrollView(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        children: [
+                          ListView.builder(
+                              shrinkWrap: true,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: item.length,
+                              itemBuilder: (context, index) {
+                                return item.values.elementAt(index);
+                              }),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: MaterialButton(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                  color: Colors.green,
+                                  elevation: 0,
+                                  onPressed: () {
+                                    setState(() {
+                                      if (item.isNotEmpty) {
+                                        item.addAll({
+                                          item.keys.last + 1: newMethod(
+                                              context, item.keys.last + 1)
+                                        });
+                                      } else {
+                                        item.addAll({0: newMethod(context, 0)});
+                                      }
+                                    });
+                                  },
+                                  child: const Text('Add Slot + ',
+                                      style: TextStyle(
+                                          fontFamily: "DMSans",
+                                          color: Colors.white)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text("Minimum One Slot Required For ${widget.day}",
-                          style: TextStyle(
-                              fontFamily: "DMSans",
-                              fontSize:
-                                  MediaQuery.of(context).size.height / 40)),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  children: [
-                    ListView.builder(
-                        shrinkWrap: true,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: item.length,
-                        itemBuilder: (context, index) {
-                          return item.values.elementAt(index);
-                        }),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: MaterialButton(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                            color: Colors.green,
-                            elevation: 0,
-                            onPressed: () {
-                              setState(() {
-                                if (item.isNotEmpty) {
-                                  item.addAll({
-                                    item.keys.last + 1:
-                                        newMethod(context, item.keys.last + 1)
-                                  });
-                                } else {
-                                  item.addAll({0: newMethod(context, 0)});
-                                }
-                              });
-                            },
-                            child: const Text('Add Slot + ',
-                                style: TextStyle(
-                                    fontFamily: "DMSans", color: Colors.white)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
+                  );
+          },
+        ));
   }
 
   String formatTimeOfDay(TimeOfDay tod) {
@@ -329,33 +331,223 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
     return format.format(dt);
   }
 
-  Future<void> setSlot() async {
-    await _server
-        .collection("SportistanPartners")
-        .doc(SlotSettingsID.groundID)
-        .update({
-          widget.day: [
-            for (int i = 0; i < DataSave.entries.length; i++)
-              {
-                'time': DataSave.entries[i].name,
-                'timeEnd': DataSave.entries[i].name2,
-                'price': int.parse(DataSave.entries[i].email),
-                'slotID': UniqueID.generateRandomString(),
-              }
-          ]
-        })
-        .then((value) => {
-              DataSave.isDataSave = true,
-              Alert.flushBarAlert(
-                  message: "Slot is Successfully Updated",
-                  context: context,
-                  title: "${widget.day} Slot Saved"),
-            })
-        .then((value) => {
-              if (widget.day == "Sunday")
-                {PageRouter.pushRemoveUntil(context, const NavHome())}
-            });
+  void showLoading() {
+    showModalBottomSheet(
+      isDismissible: false,
+      isScrollControlled: false,
+      enableDrag: false,
+      context: context,
+      builder: (ctx) {
+        return Column(
+          children: [
+            Text(
+              "Account Creation",
+              style: TextStyle(
+                  fontFamily: "DMSans",
+                  fontWeight: FontWeight.bold,
+                  fontSize: MediaQuery.of(context).size.height / 40),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "We are creating an account",
+                style: TextStyle(
+                    fontFamily: "DMSans",
+                    color: Colors.black45,
+                    fontSize: MediaQuery.of(context).size.height / 55),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: LinearProgressIndicator(
+                backgroundColor: Colors.white,
+                color: Colors.green,
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(
+                  strokeWidth: 1, color: Colors.green),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Please Don't back or close the app",
+                style: TextStyle(
+                    fontFamily: "DMSans",
+                    color: Colors.black45,
+                    fontSize: MediaQuery.of(context).size.height / 45),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
+
+
+  Future<void> setSlot() async {
+    if (RegisterDataClass.serverInit) {
+      try {
+        await _server
+            .collection("SportistanPartners")
+            .doc(RegisterDataClass.groundID.toString())
+            .update({
+              widget.day: [
+                for (int i = 0; i < DataSave.entries.length; i++)
+                  {
+                    'time': DataSave.entries[i].name,
+                    'timeEnd': DataSave.entries[i].name2,
+                    'price': int.parse(DataSave.entries[i].email),
+                    'slotID': UniqueID.generateRandomString(),
+                  }
+              ]
+            })
+            .then((value) => {
+                  DataSave.isDataSave = true,
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("Saved"),
+                    duration: Duration(milliseconds: 500),
+                    backgroundColor: Colors.green,
+                  ))
+                })
+            .then((value) => {
+                  if (widget.day == "Sunday")
+                    {
+                      getKycLinks(),
+                    }
+                });
+      } catch (e) {
+        if (mounted) {
+          Errors.flushBarInform(
+              "Unable to set slots something went wrong",
+              context,
+              'Error while creating please check internet or any other permission');
+        }
+      }
+    } else {
+      _server.collection("SportistanPartners").doc(RegisterDataClass.groundID.toString()).set({
+        'Monday': [],
+        'Tuesday': [],
+        'Wednesday': [],
+        'Thursday': [],
+        'Friday': [],
+        'Saturday': [],
+        'Sunday': [],
+        'geo': '',
+        'locationName': '',
+        'isVerified': false,
+        'groundType': '',
+        'userID': '',
+        'groundID': '',
+        'groundName': '',
+        'kycImageLinks': [],
+        'groundServices': [],
+        'groundImages': [],
+        'name': [],
+        'onwards' : '',
+        'accountCreatedAt': '',
+      });
+      RegisterDataClass.serverInit = true;
+      setSlot();
+    }
+  }
+
+  void getSlots() async {
+    try {
+      var daySlots = [];
+      var collection = _server.collection('SportistanPartners');
+      var docSnapshot = await collection.doc(RegisterDataClass.groundID.toString()).get();
+      Map<String, dynamic> data = docSnapshot.data()!;
+      daySlots = data["Monday"];
+      if (mounted) {
+        await addSlots(daySlots.length - 1);
+      }
+      for (int i = 0; i < daySlots.length; i++) {
+        nameTECs[i]?.text = data["Monday"][i]['time'];
+        nameTECs2[i]?.text = data["Monday"][i]['timeEnd'];
+        mailTECs[i]?.text = data["Monday"][i]['price'].toString();
+      }
+      listLoad.value = false;
+    } catch (e) {
+      listLoad.value = false;
+    }
+  }
+
+  Future<void> addSlots(int daySlots) async {
+    for (int i = 0; i <= daySlots; i++) {
+      item.addAll({i: newMethod(context, i)});
+    }
+    setState(() {});
+  }
+
+
+
+  Future<void> getKycLinks() async {
+    showLoading();
+
+    for (int i = 0; i < RegisterDataClass.kycImages.length; i++) {
+      TaskSnapshot task = await _storage
+          .ref(_auth.currentUser!.uid)
+          .child("kyc")
+          .child(RegisterDataClass.kycImages[i].name.toString())
+          .putFile(File(RegisterDataClass.kycImages[i].path));
+      await task.ref.getDownloadURL().then((value) => {
+          RegisterDataClass.kycUrls.add(value)
+          });
+    }
+    await getGroundLinks();
+
+  }
+
+  Future<void> getGroundLinks() async {
+    for (int i = 0; i < RegisterDataClass.groundImages.length; i++) {
+      TaskSnapshot task = await _storage
+          .ref(_auth.currentUser!.uid)
+          .child("kyc")
+          .child(RegisterDataClass.groundImages[i].name.toString())
+          .putFile(File(RegisterDataClass.groundImages[i].path));
+      await task.ref.getDownloadURL().then((value) => {
+            if (value.isNotEmpty) {RegisterDataClass.groundUrls.add(value)}
+          });
+    }
+  setEverything();
+  }
+  Future<void> setEverything() async {
+
+    try{
+      await _server.collection("SportistanPartners").doc(RegisterDataClass.groundID).update({
+        'geo': GeoFirePoint(GeoPoint(
+            RegisterDataClass.latitude, RegisterDataClass.longitude))
+            .data,
+        'locationName': RegisterDataClass.address,
+        'isVerified': false,
+        'groundType': RegisterDataClass.sportsTag,
+        'userID': _auth.currentUser!.uid,
+        'groundID': RegisterDataClass.groundID,
+        'groundName': RegisterDataClass.groundName,
+        'kycImageLinks': RegisterDataClass.kycUrls,
+        'groundServices': RegisterDataClass.groundServices,
+        'groundImages': RegisterDataClass.groundUrls,
+        'name': RegisterDataClass.personName,
+        'onwards' : onwardsAmount,
+        'accountCreatedAt':
+        DateFormat('E, d MMMM yyyy HH:mm:ss').format(DateTime.now()),
+      }).then((value) => {
+      RegisterDataClass.clear(),
+
+          PageRouter.pushRemoveUntil(context, const NavHome())
+      });
+    }catch(e){
+      if (mounted) {
+        Errors.flushBarInform("Something went wrong", context, "Try Again");
+      }
+    }
+
+
+
+  }
+
 }
 
 class Entry {

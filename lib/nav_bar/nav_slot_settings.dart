@@ -3,17 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportistan_partners/authentication/slot_setting.dart';
-import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/nav_bar/slot_add_settings.dart';
 import 'package:sportistan_partners/utils/errors.dart';
-import 'package:sportistan_partners/utils/page_router.dart';
 
 class NavSlotSettings extends StatefulWidget {
-  const NavSlotSettings({super.key, required this.day, required this.groundID});
 
   final String day;
-  final String groundID;
+  final String refID;
+
+  const NavSlotSettings({super.key, required this.day, required this.refID});
 
   @override
   State<NavSlotSettings> createState() => _NavSlotSettingsState();
@@ -34,10 +34,16 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
 
   ValueNotifier<bool> listLoad = ValueNotifier<bool>(true);
 
+  void userStateSave() async {
+    final data = await SharedPreferences.getInstance();
+    data.setBool("onBoarding", true);
+    getSlots();
+  }
+
   @override
   void initState() {
     super.initState();
-    getSlots();
+    userStateSave();
   }
 
   @override
@@ -62,9 +68,9 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
   }
 
   newMethod(
-    BuildContext context,
-    int index,
-  ) {
+      BuildContext context,
+      int index,
+      ) {
     var nameController = TextEditingController();
     var nameController2 = TextEditingController();
     var mailController = TextEditingController();
@@ -107,13 +113,13 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                     },
                     decoration: const InputDecoration(
                       prefixIcon:
-                          Icon(Icons.access_time_outlined, color: Colors.green),
+                      Icon(Icons.access_time_outlined, color: Colors.green),
                       fillColor: Colors.white,
                       border: InputBorder.none,
                       filled: true,
                       hintText: "Start Time",
                       hintStyle:
-                          TextStyle(color: Colors.black, fontFamily: "DMSans"),
+                      TextStyle(color: Colors.black, fontFamily: "DMSans"),
                     ),
                   ),
                 ),
@@ -140,13 +146,13 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                     },
                     decoration: const InputDecoration(
                       prefixIcon:
-                          Icon(Icons.access_time_outlined, color: Colors.amber),
+                      Icon(Icons.access_time_outlined, color: Colors.amber),
                       fillColor: Colors.white,
                       border: InputBorder.none,
                       filled: true,
                       hintText: "End Time",
                       hintStyle:
-                          TextStyle(color: Colors.black, fontFamily: "DMSans"),
+                      TextStyle(color: Colors.black, fontFamily: "DMSans"),
                     ),
                   ),
                 ),
@@ -177,7 +183,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                   filled: true,
                   hintText: "Set Slot Price",
                   hintStyle:
-                      TextStyle(color: Colors.black, fontFamily: "DMSans"),
+                  TextStyle(color: Colors.black, fontFamily: "DMSans"),
                 )),
           ),
           const Padding(
@@ -189,7 +195,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
           ),
           MaterialButton(
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             elevation: 0,
             color: Colors.red,
             onPressed: () {
@@ -217,89 +223,89 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
             title: Text(
               widget.day,
               style:
-                  const TextStyle(fontFamily: "DMSans", color: Colors.black54),
+              const TextStyle(fontFamily: "DMSans", color: Colors.black54),
             )),
         bottomNavigationBar: item.isNotEmpty
             ? CupertinoButton(
-                borderRadius: const BorderRadius.all(Radius.zero),
-                color: Colors.green.shade800,
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    ondDone();
-                  }
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    const Icon(Icons.save),
-                    Text("Save Slots for ${widget.day}"),
-                  ],
-                ),
-              )
+          borderRadius: const BorderRadius.all(Radius.zero),
+          color: Colors.green.shade800,
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              ondDone();
+            }
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              const Icon(Icons.save),
+              Text("Save Slots for ${widget.day}"),
+            ],
+          ),
+        )
             : CupertinoButton(
-                borderRadius: const BorderRadius.all(Radius.zero),
-                color: Colors.indigo,
-                onPressed: () {
-                  setState(() {
-                    item.addAll({0: newMethod(context, 0)});
-                  });
-                },
-                child: const Text("Add Slot",
-                    style: TextStyle(fontFamily: "DMSans")),
-              ),
+          borderRadius: const BorderRadius.all(Radius.zero),
+          color: Colors.indigo,
+          onPressed: () {
+            setState(() {
+              item.addAll({0: newMethod(context, 0)});
+            });
+          },
+          child: const Text("Add Slot",
+              style: TextStyle(fontFamily: "DMSans")),
+        ),
         body: ValueListenableBuilder(
           valueListenable: listLoad,
           builder: (context, value, child) {
             return listLoad.value
                 ? const Center(
-                    child: CircularProgressIndicator(strokeWidth: 1),
-                  )
+              child: CircularProgressIndicator(strokeWidth: 1),
+            )
                 : SingleChildScrollView(
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        children: [
-                          ListView.builder(
-                              shrinkWrap: true,
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: item.length,
-                              itemBuilder: (context, index) {
-                                return item.values.elementAt(index);
-                              }),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: MaterialButton(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20)),
-                                  color: Colors.green,
-                                  elevation: 0,
-                                  onPressed: () {
-                                    setState(() {
-                                      if (item.isNotEmpty) {
-                                        item.addAll({
-                                          item.keys.last + 1: newMethod(
-                                              context, item.keys.last + 1)
-                                        });
-                                      } else {
-                                        item.addAll({0: newMethod(context, 0)});
-                                      }
-                                    });
-                                  },
-                                  child: const Text('Add Slot + ',
-                                      style: TextStyle(
-                                          fontFamily: "DMSans",
-                                          color: Colors.white)),
-                                ),
-                              ),
-                            ],
+              child: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    ListView.builder(
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: item.length,
+                        itemBuilder: (context, index) {
+                          return item.values.elementAt(index);
+                        }),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: MaterialButton(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
+                            color: Colors.green,
+                            elevation: 0,
+                            onPressed: () {
+                              setState(() {
+                                if (item.isNotEmpty) {
+                                  item.addAll({
+                                    item.keys.last + 1: newMethod(
+                                        context, item.keys.last + 1)
+                                  });
+                                } else {
+                                  item.addAll({0: newMethod(context, 0)});
+                                }
+                              });
+                            },
+                            child: const Text('Add Slot + ',
+                                style: TextStyle(
+                                    fontFamily: "DMSans",
+                                    color: Colors.white)),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
+                  ],
+                ),
+              ),
+            );
           },
         ));
   }
@@ -313,37 +319,32 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
 
   Future<void> setSlot() async {
     await _server
-        .collection("SportistanPartners")
-        .doc(SlotSettingsID.groundID)
+        .collection("SportistanPartners").doc(widget.refID)
         .update({
-          widget.day: [
-            for (int i = 0; i < DataSave.entries.length; i++)
-              {
-                'time': DataSave.entries[i].name,
-                'timeEnd': DataSave.entries[i].name2,
-                'price': int.parse(DataSave.entries[i].email),
-                'slotID': UniqueID.generateRandomString(),
-              }
-          ]
-        })
+      widget.day: [
+        for (int i = 0; i < DataSave.entries.length; i++)
+          {
+            'time': DataSave.entries[i].name,
+            'timeEnd': DataSave.entries[i].name2,
+            'price': int.parse(DataSave.entries[i].email),
+            'slotID': UniqueID.generateRandomString(),
+          }
+      ]
+    })
         .then((value) => {
-              DataSave.isDataSave = true,
-              Alert.flushBarAlert(
-                  message: "Slot is Successfully Updated",
-                  context: context,
-                  title: "${widget.day} Slot Saved"),
-            })
-        .then((value) => {
-              if (widget.day == "Sunday")
-                {PageRouter.pushRemoveUntil(context, const NavHome())}
-            });
+      DataSave.isDataSave = true,
+      Alert.flushBarAlert(
+          message: "Slot is Successfully Updated",
+          context: context,
+          title: "${widget.day} Slot Saved"),
+    });
   }
 
   void getSlots() async {
     var daySlots = [];
     try {
       var collection = _server.collection('SportistanPartners');
-      var docSnapshot = await collection.doc(widget.groundID).get();
+      var docSnapshot = await collection.doc(widget.refID).get();
       Map<String, dynamic> data = docSnapshot.data()!;
       slotsElements = data;
 
@@ -368,10 +369,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
   Future<void> addSlots(int daySlots) async {
     for (int i = 0; i <= daySlots; i++) {
       item.addAll({i: newMethod(context, i)});
-
     }
-      setState(() {
-
-      });
+    setState(() {});
   }
 }
