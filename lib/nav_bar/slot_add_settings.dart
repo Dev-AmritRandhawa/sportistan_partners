@@ -37,19 +37,16 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
 
   ValueNotifier<bool> listLoad = ValueNotifier<bool>(true);
 
-  int onwardsAmount = 0;
 
   final _storage = FirebaseStorage.instance;
 
-
-
+  int onwardsAmount = 0;
 
   @override
   void initState() {
-getSlots();
+    getSlots();
     super.initState();
   }
-
 
   @override
   void dispose() {
@@ -67,10 +64,7 @@ getSlots();
             name: name.toString(),
             name2: name2.toString(),
             email: mail.toString()));
-        onwardsAmount = int.parse(mailTECs[i]!.value.text);
-        if(int.parse(mailTECs[i]!.value.text) > onwardsAmount){
-          onwardsAmount = int.parse(mailTECs[i]!.value.text);
-        }
+        checkOnwards(i);
       }
     }
     await setSlot();
@@ -244,7 +238,6 @@ getSlots();
                 onPressed: () {
                   if (formKey.currentState!.validate()) {
                     ondDone();
-
                   }
                 },
                 child: Row(
@@ -385,7 +378,6 @@ getSlots();
     );
   }
 
-
   Future<void> setSlot() async {
     if (RegisterDataClass.serverInit) {
       try {
@@ -426,7 +418,10 @@ getSlots();
         }
       }
     } else {
-      _server.collection("SportistanPartners").doc(RegisterDataClass.groundID.toString()).set({
+      _server
+          .collection("SportistanPartners")
+          .doc(RegisterDataClass.groundID.toString())
+          .set({
         'Monday': [],
         'Tuesday': [],
         'Wednesday': [],
@@ -445,7 +440,7 @@ getSlots();
         'groundServices': [],
         'groundImages': [],
         'name': [],
-        'onwards' : '',
+        'onwards': '',
         'accountCreatedAt': '',
       });
       RegisterDataClass.serverInit = true;
@@ -457,7 +452,8 @@ getSlots();
     try {
       var daySlots = [];
       var collection = _server.collection('SportistanPartners');
-      var docSnapshot = await collection.doc(RegisterDataClass.groundID.toString()).get();
+      var docSnapshot =
+          await collection.doc(RegisterDataClass.groundID.toString()).get();
       Map<String, dynamic> data = docSnapshot.data()!;
       daySlots = data["Monday"];
       if (mounted) {
@@ -481,8 +477,6 @@ getSlots();
     setState(() {});
   }
 
-
-
   Future<void> getKycLinks() async {
     showLoading();
 
@@ -492,33 +486,35 @@ getSlots();
           .child("kyc")
           .child(RegisterDataClass.kycImages[i].name.toString())
           .putFile(File(RegisterDataClass.kycImages[i].path));
-      await task.ref.getDownloadURL().then((value) => {
-          RegisterDataClass.kycUrls.add(value)
-          });
+      await task.ref
+          .getDownloadURL()
+          .then((value) => {RegisterDataClass.kycUrls.add(value)});
     }
     await getGroundLinks();
-
   }
 
   Future<void> getGroundLinks() async {
     for (int i = 0; i < RegisterDataClass.groundImages.length; i++) {
       TaskSnapshot task = await _storage
           .ref(_auth.currentUser!.uid)
-          .child("kyc")
+          .child("groundImages")
           .child(RegisterDataClass.groundImages[i].name.toString())
           .putFile(File(RegisterDataClass.groundImages[i].path));
       await task.ref.getDownloadURL().then((value) => {
             if (value.isNotEmpty) {RegisterDataClass.groundUrls.add(value)}
           });
     }
-  setEverything();
+    setEverything();
   }
-  Future<void> setEverything() async {
 
-    try{
-      await _server.collection("SportistanPartners").doc(RegisterDataClass.groundID).update({
+  Future<void> setEverything() async {
+    try {
+      await _server
+          .collection("SportistanPartners")
+          .doc(RegisterDataClass.groundID)
+          .update({
         'geo': GeoFirePoint(GeoPoint(
-            RegisterDataClass.latitude, RegisterDataClass.longitude))
+                RegisterDataClass.latitude, RegisterDataClass.longitude))
             .data,
         'locationName': RegisterDataClass.address,
         'isVerified': false,
@@ -530,24 +526,37 @@ getSlots();
         'groundServices': RegisterDataClass.groundServices,
         'groundImages': RegisterDataClass.groundUrls,
         'name': RegisterDataClass.personName,
-        'onwards' : onwardsAmount,
+        'onwards': onwardsAmount,
         'accountCreatedAt':
-        DateFormat('E, d MMMM yyyy HH:mm:ss').format(DateTime.now()),
+            DateFormat('E, d MMMM yyyy HH:mm:ss').format(DateTime.now()),
       }).then((value) => {
-      RegisterDataClass.clear(),
-
-          PageRouter.pushRemoveUntil(context, const NavHome())
-      });
-    }catch(e){
+                RegisterDataClass.groundImages.clear(),
+                RegisterDataClass.kycImages.clear(),
+                RegisterDataClass.groundUrls.clear(),
+                RegisterDataClass.kycUrls.clear(),
+                RegisterDataClass.serverInit= false,
+                PageRouter.pushRemoveUntil(context, const NavHome())
+              });
+    } catch (e) {
       if (mounted) {
         Errors.flushBarInform("Something went wrong", context, "Try Again");
       }
     }
-
-
-
   }
 
+  void checkOnwards(int i) {
+    if(RegisterDataClass.onwardsAmount == 0){
+      RegisterDataClass.onwardsAmount = int.parse(mailTECs[i]!.value.text);
+    }
+    int a = int.parse(mailTECs[i]!.value.text);
+    int b = RegisterDataClass.onwardsAmount;
+
+    if(a < b){
+      onwardsAmount = int.parse(mailTECs[i]!.value.text);
+    }else{
+      onwardsAmount = RegisterDataClass.onwardsAmount;
+    }
+  }
 }
 
 class Entry {

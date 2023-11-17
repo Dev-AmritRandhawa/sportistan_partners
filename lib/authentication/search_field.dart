@@ -12,6 +12,7 @@ import 'package:sportistan_partners/assistants/request_api.dart';
 import 'package:sportistan_partners/authentication/ground_photos.dart';
 import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/register_data_class.dart';
 
 class SearchField extends StatefulWidget {
   const SearchField({super.key});
@@ -346,12 +347,12 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
                           ),
                         ),
                         onPressed: () {
+                          RegisterDataClass.latitude = latitude;
+                          RegisterDataClass.longitude = longitude;
+                          RegisterDataClass.address = address;
                           PageRouter.push(
                               context,
-                              GroundPhotos(
-                                latitude: latitude,
-                                longitude: longitude,
-                                address: address,
+                              const GroundPhotos(
                               ));
                         })
                     : Platform.isIOS
@@ -382,8 +383,9 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
     );
     final GoogleMapController controller = await _controller.future;
     refController = controller;
-
+    if(mounted) {
     controller.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+    }
 
     String data = await RequestMethods.searchCoordinateRequests(
         LatLng(position.latitude, position.longitude));
@@ -412,7 +414,9 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
           markerId: const MarkerId("My Location"),
           icon: BitmapDescriptor.defaultMarker),
     );
+    if(mounted){
     setState(() {});
+  }
   }
 
   @override

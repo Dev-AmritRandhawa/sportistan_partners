@@ -1,26 +1,20 @@
 import 'dart:io';
+import 'package:chips_choice/chips_choice.dart';
 import 'package:delayed_display/delayed_display.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:sportistan_partners/authentication/ground_details_register.dart';
-import 'package:sportistan_partners/utils/errors.dart';
+import 'package:sportistan_partners/bookings/book_a_slot.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
+import 'package:sportistan_partners/utils/register_data_class.dart';
 
 class GroundPhotos extends StatefulWidget {
-  final double latitude;
-  final double longitude;
-  final String address;
+  const GroundPhotos({super.key});
 
-  const GroundPhotos(
-      {super.key,
-      required this.latitude,
-      required this.longitude,
-      required this.address});
+
 
   @override
   State<GroundPhotos> createState() => _GroundPhotosState();
@@ -30,6 +24,18 @@ class _GroundPhotosState extends State<GroundPhotos>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
+  List<String> serviceTags = ['Washroom'];
+  List<String> serviceOptions = [
+    'Flood Lights',
+    'Parking',
+    'Sound System',
+    'Warm Up Area',
+    'Washroom',
+    'Coaching Available',
+  ];
+
+  var currentPage = 0;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -38,35 +44,19 @@ class _GroundPhotosState extends State<GroundPhotos>
 
   @override
   void initState() {
-    _controller = AnimationController(vsync: this);
+  _controller = AnimationController(vsync: this);
     super.initState();
   }
 
-  ValueNotifier<bool> imagesPreview = ValueNotifier<bool>(false);
-
-  final _storage = FirebaseStorage.instance;
-  double? _progress;
 
   TextEditingController nameController = TextEditingController();
   TextEditingController groundController = TextEditingController();
   GlobalKey<FormState> groundKey = GlobalKey<FormState>();
   GlobalKey<FormState> nameKey = GlobalKey<FormState>();
-  ValueNotifier<bool> fileUpload = ValueNotifier<bool>(false);
-  ValueNotifier<bool> loading = ValueNotifier<bool>(false);
-  final _auth = FirebaseAuth.instance;
-  List<String> allFiles = [];
-  FilePickerResult? result;
-  List<String> urls = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: CupertinoButton(
-          onPressed: () {
-              const number = '+918591719905'; //set the number here
-              FlutterPhoneDirectCaller.callNumber(number);
-          },
-          child: const Text("Need Help? Contact Customer Support")),
       body: SafeArea(
           child: DelayedDisplay(
         child: SingleChildScrollView(
@@ -74,16 +64,6 @@ class _GroundPhotosState extends State<GroundPhotos>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height / 10,
-                  width: MediaQuery.of(context).size.height / 10,
-                  child: Image.asset(
-                    "assets/logo.png",
-                  ),
-                ),
-              ),
               SizedBox(
                 height: MediaQuery.of(context).size.height / 5,
                 width: MediaQuery.of(context).size.height / 5,
@@ -107,7 +87,7 @@ class _GroundPhotosState extends State<GroundPhotos>
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        widget.address,
+                        RegisterDataClass.address,
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: MediaQuery.of(context).size.height / 40,
@@ -115,132 +95,37 @@ class _GroundPhotosState extends State<GroundPhotos>
                             color: Colors.black),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20, bottom: 20),
-                      child: CupertinoButton(
-                          color: Colors.orangeAccent,
-                          child: const Text("Upload Ground Images"),
-                          onPressed: () async {
-                            FilePickerResult? result = await FilePicker.platform
-                                .pickFiles(
-                                    allowMultiple: true, type: FileType.image);
-                            if (result != null) {
-                              loading.value = true;
-                              List<File> files = result.paths
-                                  .map((path) => File(path!))
-                                  .toList();
-                              try {
-                                for (int i = 0; i < files.length; i++) {
-                                  await _storage
-                                      .ref(
-                                          "${_auth.currentUser!.phoneNumber}")
-                                      .putFile(files[i])
-                                      .whenComplete(() async => {
-                                            await _storage
-                                                .ref()
-                                                .storage
-                                                .ref(
-                                                    "${_auth.currentUser!.phoneNumber}")
-                                                .getDownloadURL()
-                                                .then((value) =>
-                                                    {urls.add(value)}),
-                                            setState(() {
-                                              allFiles.add(DateTime.now().toString());
-                                            }),
-                                          });
-                                }
-
-                                fileUpload.value = true;
-                                loading.value = false;
-                              } catch (e) {
-                                fileUpload.value = false;
-                              }
-                            } else {
-                              // User canceled the picker
-                            }
-                          }),
-                    ),
-                    ValueListenableBuilder(
-                      valueListenable: loading,
-                      builder: (context, value, child) {
-                        return value
-                            ? Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Column(
-                                  children: [
-                                    LinearProgressIndicator(
-                                        value: _progress,
-                                        color: Colors.green,
-                                        backgroundColor: Colors.grey),
-                                  ],
-                                ),
-                              )
-                            : Container();
-                      },
-                    ),
-                    ValueListenableBuilder(
-                      valueListenable: fileUpload,
-                      builder: (context, value, child) {
-                        return value
-                            ? ListView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: allFiles.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    leading: const Icon(Icons.image),
-                                    title: Text(allFiles[index]),
-                                    trailing: InkWell(
-                                        onTap: () {
-                                          try {
-                                            _storage
-                                                .ref(
-                                                    "${_auth.currentUser!.phoneNumber}/${allFiles[index]}")
-                                                .delete()
-                                                .whenComplete(() =>
-                                                    setState(() {
-                                                      allFiles.removeAt(index);
-                                                      if (allFiles.isEmpty) {
-                                                        fileUpload.value =
-                                                            false;
-                                                      }
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                              SnackBar(
-                                                                  duration:
-                                                                      const Duration(
-                                                                          seconds:
-                                                                              2),
-                                                                  content: Row(
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
-                                                                            .spaceBetween,
-                                                                    children: [
-                                                                      const Text(
-                                                                          "Deleting"),
-                                                                      Platform.isIOS
-                                                                          ? const CupertinoActivityIndicator()
-                                                                          : const CircularProgressIndicator()
-                                                                    ],
-                                                                  )));
-                                                      Errors.flushBarInform(
-                                                          "Deleted",
-                                                          context,
-                                                          "Success");
-                                                    }));
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(const SnackBar(
-                                                    duration:
-                                                        Duration(seconds: 2),
-                                                    content: Text(
-                                                        "Something went wrong")));
-                                          }
-                                        },
-                                        child: const Icon(Icons.close)),
-                                  );
+                    RegisterDataClass.groundImages.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 20, bottom: 20),
+                            child: CupertinoButton(
+                                color: Colors.orangeAccent,
+                                child: const Text("Select Images"),
+                                onPressed: () async {
+                                  uploadImages();
+                                }),
+                          )
+                        : Container(),
+                    ListView.builder(
+                      itemCount: RegisterDataClass.groundImages.length,
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return RegisterDataClass.groundImages.isNotEmpty
+                            ? ListTile(
+                                title: Text(RegisterDataClass.groundImages[index].name.toString()),
+                                leading: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height / 25,
+                                    child:
+                                        Image.file(File(RegisterDataClass.groundImages[index].path))),
+                                onTap: () async {
+                                  setState(() {
+                                    RegisterDataClass.groundImages.removeAt(index);
+                                  });
                                 },
+                                trailing: const Icon(Icons.delete_forever,
+                                    color: Colors.red),
                               )
                             : Container();
                       },
@@ -248,24 +133,57 @@ class _GroundPhotosState extends State<GroundPhotos>
                   ],
                 ),
               ),
-              ValueListenableBuilder(
-                valueListenable: fileUpload,
-                builder: (context, value, child) {
-                  return Padding(
-                    padding: EdgeInsets.only(
-                        top: MediaQuery.of(context).size.height / 15,
-                        bottom: MediaQuery.of(context).size.height / 15),
-                    child: CupertinoButton(
-                        color: Colors.green,
-                        onPressed: value
-                            ? () async {
-                                setEverything();
-                              }
-                            : null,
-                        child: const Text("Next Step")),
-                  );
-                },
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  shrinkWrap: true,
+                  addAutomaticKeepAlives: true,
+                  children: <Widget>[
+                    Content(
+                      title: 'Choose Ground Services if Available',
+                      child: ChipsChoice<String>.multiple(
+                        value: serviceTags,
+                        onChanged: (val) => setState(() => serviceTags = val),
+                        choiceItems: C2Choice.listFrom<String, String>(
+                          source: serviceOptions,
+                          value: (i, v) => v,
+                          label: (i, v) => v,
+                          tooltip: (i, v) => v,
+                        ),
+                        choiceCheckmark: true,
+                        choiceStyle: C2ChipStyle.filled(
+                          color: Colors.green,
+                          selectedStyle: const C2ChipStyle(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(25),
+                            ),
+                          ),
+                        ),
+                        wrapped: true,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              RegisterDataClass.groundImages.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CupertinoButton(
+                          color: Colors.green,
+                          onPressed: () async {
+                            RegisterDataClass.groundServices = serviceTags;
+                            PageRouter.push(context, const GroundDetailsRegister());
+                          },
+                          child: const Text(
+                            "Next Step",
+                            style: TextStyle(fontFamily: "DMSans"),
+                          )),
+                    )
+                  : Container(),
+              SizedBox(
+                height: MediaQuery.of(context).size.height / 10,
+              )
             ],
           ),
         ),
@@ -273,13 +191,18 @@ class _GroundPhotosState extends State<GroundPhotos>
     );
   }
 
-  Future<void> setEverything() async {
-    PageRouter.push(
-        context,
-        GroundDetailsRegister(
-            latitude: widget.latitude,
-            longitude: widget.longitude,
-            address: widget.address,
-            groundImages: urls));
+
+  uploadImages() async {
+    final ImagePicker picker = ImagePicker();
+    RegisterDataClass.groundImages = await picker.pickMultiImage(imageQuality: 50);
+    if (RegisterDataClass.groundImages.isNotEmpty) {
+      setState(() {});
+    }
   }
+
+
+
+
+
+
 }

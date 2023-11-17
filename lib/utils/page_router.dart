@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 class PageRouter{
 
- static void push(BuildContext context, Widget className){
+ static Future<void> push(BuildContext context, Widget className)async {
     if(Platform.isAndroid){
       Navigator.push(context, MaterialPageRoute(builder: (context) => className,));
     }
