@@ -37,10 +37,12 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
 
   ValueNotifier<bool> listLoad = ValueNotifier<bool>(true);
 
-
   final _storage = FirebaseStorage.instance;
 
   int onwardsAmount = 0;
+
+  TextEditingController entireDayController = TextEditingController();
+  GlobalKey<FormState> entireDayControllerKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -236,7 +238,8 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 borderRadius: const BorderRadius.all(Radius.zero),
                 color: Colors.green.shade800,
                 onPressed: () {
-                  if (formKey.currentState!.validate()) {
+                  if (formKey.currentState!.validate() &
+                      entireDayControllerKey.currentState!.validate()) {
                     ondDone();
                   }
                 },
@@ -277,7 +280,54 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                               physics: const BouncingScrollPhysics(),
                               itemCount: item.length,
                               itemBuilder: (context, index) {
-                                return item.values.elementAt(index);
+                                return Column(
+                                  children: [
+                                    item.values.elementAt(index),
+                                    Form(
+                                      key: entireDayControllerKey,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: TextFormField(
+                                          validator: (input) {
+                                            if (input!.isEmpty) {
+                                              return "Price is Missing";
+                                            } else {
+                                              return null;
+                                            }
+                                          },
+                                          style: const TextStyle(
+                                              color: Colors.black87),
+                                          controller: entireDayController,
+                                          keyboardType: TextInputType.name,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
+                                          ],
+                                          decoration: InputDecoration(
+                                              label: const Text("Entire Day Amount"),
+
+                                              errorStyle: const TextStyle(
+                                                  color: Colors.red),
+                                              hintText:
+                                                  "Enter Entire Day Amount for ${widget.day} ?",
+                                              hintStyle: TextStyle(
+                                                  fontSize:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .height /
+                                                          50,
+                                                  color: Colors.black87,
+                                                  fontFamily: "Nunito"),
+                                              fillColor: Colors.grey.shade200,
+                                              filled: true,
+                                              border: const OutlineInputBorder(
+                                                borderSide: BorderSide.none,
+                                              )),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
                               }),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -403,48 +453,21 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                     backgroundColor: Colors.green,
                   ))
                 })
-            .then((value) => {
-                  if (widget.day == "Sunday")
-                    {
-                      getKycLinks(),
-                    }
+            .then((value) async => {
+                  await _server
+                      .collection("SportistanPartners")
+                      .doc(RegisterDataClass.groundID.toString())
+                      .update({
+                    '${widget.day}EntireDay': int.parse(
+                        entireDayController.value.text.trim().toString()),
+                  }),
+                  if (widget.day == "Sunday") {getKycLinks()}
                 });
       } catch (e) {
-        if (mounted) {
-          Errors.flushBarInform(
-              "Unable to set slots something went wrong",
-              context,
-              'Error while creating please check internet or any other permission');
-        }
+        setServer();
       }
     } else {
-      _server
-          .collection("SportistanPartners")
-          .doc(RegisterDataClass.groundID.toString())
-          .set({
-        'Monday': [],
-        'Tuesday': [],
-        'Wednesday': [],
-        'Thursday': [],
-        'Friday': [],
-        'Saturday': [],
-        'Sunday': [],
-        'geo': '',
-        'locationName': '',
-        'isVerified': false,
-        'groundType': '',
-        'userID': '',
-        'groundID': '',
-        'groundName': '',
-        'kycImageLinks': [],
-        'groundServices': [],
-        'groundImages': [],
-        'name': [],
-        'onwards': '',
-        'accountCreatedAt': '',
-      });
-      RegisterDataClass.serverInit = true;
-      setSlot();
+      setServer();
     }
   }
 
@@ -463,6 +486,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         nameTECs[i]?.text = data["Monday"][i]['time'];
         nameTECs2[i]?.text = data["Monday"][i]['timeEnd'];
         mailTECs[i]?.text = data["Monday"][i]['price'].toString();
+        entireDayController.text = data["MondayEntireDay"].toString();
       }
       listLoad.value = false;
     } catch (e) {
@@ -518,6 +542,13 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
             .data,
         'locationName': RegisterDataClass.address,
         'isVerified': false,
+        'sportistanCredit': 500,
+        'isKYCPending': true,
+        'kycStatus': 'Under Review',
+        'commission': 10,
+        'rejectReason': [],
+        'phoneNumber': _auth.currentUser!.phoneNumber,
+        'profileImageLink': '',
         'groundType': RegisterDataClass.sportsTag,
         'userID': _auth.currentUser!.uid,
         'groundID': RegisterDataClass.groundID,
@@ -534,7 +565,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 RegisterDataClass.kycImages.clear(),
                 RegisterDataClass.groundUrls.clear(),
                 RegisterDataClass.kycUrls.clear(),
-                RegisterDataClass.serverInit= false,
+                RegisterDataClass.serverInit = false,
                 PageRouter.pushRemoveUntil(context, const NavHome())
               });
     } catch (e) {
@@ -545,17 +576,61 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
   }
 
   void checkOnwards(int i) {
-    if(RegisterDataClass.onwardsAmount == 0){
+    if (RegisterDataClass.onwardsAmount == 0) {
       RegisterDataClass.onwardsAmount = int.parse(mailTECs[i]!.value.text);
     }
     int a = int.parse(mailTECs[i]!.value.text);
     int b = RegisterDataClass.onwardsAmount;
 
-    if(a < b){
+    if (a < b) {
       onwardsAmount = int.parse(mailTECs[i]!.value.text);
-    }else{
+    } else {
       onwardsAmount = RegisterDataClass.onwardsAmount;
     }
+  }
+
+  Future<void> setServer() async {
+    await _server
+        .collection("SportistanPartners")
+        .doc(RegisterDataClass.groundID.toString())
+        .set({
+      'Monday': [],
+      'Tuesday': [],
+      'Wednesday': [],
+      'Thursday': [],
+      'Friday': [],
+      'Saturday': [],
+      'Sunday': [],
+      'MondayEntireDay': 0,
+      'TuesdayEntireDay': 0,
+      'WednesdayEntireDay': 0,
+      'ThursdayEntireDay': 0,
+      'FridayEntireDay': 0,
+      'SaturdayEntireDay': 0,
+      'SundayEntireDay': 0,
+      'geo': '',
+      'locationName': '',
+      'isVerified': false,
+      'groundType': '',
+      'userID': '',
+      'phoneNumber': _auth.currentUser!.phoneNumber,
+      'kycStatus': 'Under Review',
+      'rejectReason': [],
+      'commission': 10,
+      'groundID': '',
+      'groundName': '',
+      'profileImageLink': '',
+      'sportistanCredit': 0,
+      'isKYCPending': true,
+      'kycImageLinks': [],
+      'groundServices': [],
+      'groundImages': [],
+      'name': [],
+      'onwards': '',
+      'accountCreatedAt': '',
+    });
+    RegisterDataClass.serverInit = true;
+    setSlot();
   }
 }
 

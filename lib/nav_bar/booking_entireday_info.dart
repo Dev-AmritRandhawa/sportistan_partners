@@ -12,19 +12,17 @@ import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'package:sportistan_partners/utils/send_cloud_message.dart';
 
-class BookingInfo extends StatefulWidget {
+class BookingEntireDayInfo extends StatefulWidget {
   final String bookingID;
 
-  const BookingInfo({super.key, required this.bookingID});
+  const BookingEntireDayInfo({super.key, required this.bookingID});
 
   @override
-  State<BookingInfo> createState() => _BookingInfoState();
+  State<BookingEntireDayInfo> createState() => _BookingEntireDayInfoState();
 }
 
-class _BookingInfoState extends State<BookingInfo> {
+class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
   String? bookingType;
-
-  String? refDetails;
 
   String? userID;
   String? groundName;
@@ -32,8 +30,6 @@ class _BookingInfoState extends State<BookingInfo> {
   String? token;
 
   String? date;
-
-  String? slotTime;
 
   @override
   void dispose() {
@@ -70,10 +66,8 @@ class _BookingInfoState extends State<BookingInfo> {
                     itemBuilder: (context, index) {
                       DocumentSnapshot doc = snapshot.data!.docs[index];
                       bookingType = doc['bookingPerson'];
-                      refDetails = doc.id;
                       userID = doc['userID'];
                       groundName = doc['groundName'];
-                      slotTime = doc['time'];
 
                       Timestamp time = doc['bookedAt'];
 
@@ -81,6 +75,8 @@ class _BookingInfoState extends State<BookingInfo> {
                       date = DateFormat.MMMMEEEEd().format(day.toDate());
                       DateTime booked = time.toDate();
                       bool isTeamBAvailable = doc["bothTeamBooked"];
+                      List<dynamic> allSlotsRef = doc['includeSlots'];
+                      String groupID = doc['groupID'];
                       return Column(
                         children: [
                           Screenshot(
@@ -151,18 +147,27 @@ class _BookingInfoState extends State<BookingInfo> {
                                               fontWeight: FontWeight.bold)),
                                     ],
                                   ),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        "Slot : ",
-                                      ),
-                                      Text(
-                                        doc["slotTime"],
-                                        style: const TextStyle(
-                                            fontFamily: "DMSans",
-                                            fontWeight: FontWeight.bold),
-                                      )
-                                    ],
+                                  const Text(
+                                    "Booked Slots",
+                                  ),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height:
+                                        MediaQuery.of(context).size.height / 15,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      shrinkWrap: true,
+                                      itemCount: allSlotsRef.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: OutlinedButton(
+                                              onPressed: null,
+                                              child: Text(allSlotsRef[index]
+                                                  .toString())),
+                                        );
+                                      },
+                                    ),
                                   ),
                                   Card(
                                     child: Padding(
@@ -190,6 +195,28 @@ class _BookingInfoState extends State<BookingInfo> {
                                       ),
                                     ),
                                   ),
+                                  isTeamBAvailable
+                                      ? const Card(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Full Booked",
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        )
+                                      : const Card(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text("Half Booked",
+                                                style: TextStyle(
+                                                    color: Colors.orangeAccent,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ),
+                                        ),
                                   Padding(
                                     padding: EdgeInsets.all(
                                       MediaQuery.of(context).size.width / 20,
@@ -467,22 +494,8 @@ class _BookingInfoState extends State<BookingInfo> {
                                                     actions: [
                                                       TextButton(
                                                           onPressed: () async {
-                                                            await _server
-                                                                .collection(
-                                                                    "GroundBookings")
-                                                                .doc(refDetails)
-                                                                .update({
-                                                              'isBookingCancelled':
-                                                                  true
-                                                            }).then(
-                                                                    (value) async =>
-                                                                        {
-                                                                          Navigator.pop(
-                                                                              ctx),
-                                                                          refundInit(
-                                                                              groundID: doc['groundID'],
-                                                                              refund: doc['bookingCommissionCharged']),
-                                                                        });
+                                                            cancelEntireDayBookingCancel(
+                                                                groupID);
                                                           },
                                                           child: const Text(
                                                               "Cancel Booking",
@@ -528,7 +541,7 @@ class _BookingInfoState extends State<BookingInfo> {
                                                             fontFamily:
                                                                 "DMSans")),
                                                     title: const Text(
-                                                        "Cancel Booking Entire Day",
+                                                        "Cancel Booking",
                                                         style: TextStyle(
                                                             color: Colors.red,
                                                             fontFamily:
@@ -536,22 +549,12 @@ class _BookingInfoState extends State<BookingInfo> {
                                                     actions: [
                                                       TextButton(
                                                           onPressed: () async {
-                                                            await _server
-                                                                .collection(
-                                                                    "GroundBookings")
-                                                                .doc(refDetails)
-                                                                .update({
-                                                              'isBookingCancelled':
-                                                                  true
-                                                            }).then(
-                                                                    (value) async =>
-                                                                        {
-                                                                          Navigator.pop(
-                                                                              ctx),
-                                                                          refundInit(
-                                                                              groundID: doc['groundID'],
-                                                                              refund: doc['bookingCommissionCharged']),
-                                                                        });
+                                                            await cancelEntireDayBookingCancel(
+                                                                groupID);
+                                                            if (mounted) {
+                                                              Navigator.pop(
+                                                                  ctx);
+                                                            }
                                                           },
                                                           child: const Text(
                                                               "Cancel Booking",
@@ -659,7 +662,7 @@ class _BookingInfoState extends State<BookingInfo> {
                                   .doc(value.docChanges.first.doc.id)
                                   .update({
                                 'sportistanCredit': sportistanCredit + refund
-                              }).then((value) => {})
+                              }).then((value) => {sendNotification()})
                             })
                   }
                 else
@@ -676,7 +679,7 @@ class _BookingInfoState extends State<BookingInfo> {
                                   .doc(value.docChanges.first.doc.id)
                                   .update({
                                 'sportistanCredit': sportistanCredit + refund
-                              }).then((value) => {})
+                              }).then((value) => {sendNotification()})
                             })
                   }
               });
@@ -697,11 +700,41 @@ class _BookingInfoState extends State<BookingInfo> {
     final token = snapshot.docs[0].get("token");
 
     FirebaseCloudMessaging.sendPushMessage(
-        "$groundName Booking is Cancelled of Slot $slotTime $date",
+        "$groundName Booking is Cancelled of Slot Entire Day $date",
         "Booking Cancelled",
         token);
     if (mounted) {
       Navigator.pop(context);
+    }
+  }
+
+  late num refundCalculation;
+  String? groundID;
+
+  Future<void> cancelEntireDayBookingCancel(String groupID) async {
+    try {
+      await _server
+          .collection("GroundBookings")
+          .where('groupID', isEqualTo: groupID)
+          .get()
+          .then((value) async => {
+                refundCalculation =
+                    value.docChanges.first.doc.get("sportistanCredit"),
+                for (int i = 0; i < value.docChanges.length; i++)
+                  {
+                    await _server
+                        .collection("GroundBookings")
+                        .doc(value.docs[i].id)
+                        .update({'isBookingCancelled': true})
+                  }
+              });
+      refundInit(groundID: groundID.toString(), refund: refundCalculation);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Booking Cancelled")));
+      }
+    } catch (e) {
+      return;
     }
   }
 }

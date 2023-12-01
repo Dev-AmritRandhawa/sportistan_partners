@@ -14,10 +14,6 @@ import 'package:sportistan_partners/utils/register_data_class.dart';
 class GroundDetailsRegister extends StatefulWidget {
   const GroundDetailsRegister({super.key});
 
-
-
-
-
   @override
   State<GroundDetailsRegister> createState() => _GroundDetailsRegisterState();
 }
@@ -128,9 +124,7 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     style: const TextStyle(color: Colors.black87),
                     controller: groundController,
                     keyboardType: TextInputType.name,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z]")),
-                    ],
+
                     decoration: InputDecoration(
                         errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Ground Name",

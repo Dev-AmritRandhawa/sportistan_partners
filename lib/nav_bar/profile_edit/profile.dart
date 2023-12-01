@@ -8,7 +8,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
-import 'package:flutter_profile_picture/flutter_profile_picture.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pinput/pinput.dart';
@@ -18,7 +17,10 @@ import 'package:sportistan_partners/authentication/location_permission.dart';
 import 'package:sportistan_partners/authentication/phone_authentication.dart';
 import 'package:sportistan_partners/authentication/search_field.dart';
 import 'package:sportistan_partners/main.dart';
+import 'package:sportistan_partners/nav_bar/profile_edit/crop.dart';
 import 'package:sportistan_partners/nav_bar/profile_edit/edit_ground.dart';
+import 'package:sportistan_partners/nav_bar/profile_edit/sportistan_credit.dart';
+import 'package:sportistan_partners/nav_bar/profile_edit/verified_grounds.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'dart:async';
@@ -34,22 +36,24 @@ class _ProfileState extends State<Profile> {
   final _auth = FirebaseAuth.instance;
   final otpController = TextEditingController();
   final numberController = TextEditingController();
+  final finalOTPController = TextEditingController();
   GlobalKey<FormState> numberKey = GlobalKey<FormState>();
   ValueNotifier<bool> loading = ValueNotifier<bool>(false);
-  ValueNotifier<bool> profile = ValueNotifier<bool>(false);
+  ValueNotifier<bool> buttonDisable = ValueNotifier<bool>(false);
+  ValueNotifier<bool> imageListener = ValueNotifier<bool>(false);
 
   String countryCode = "+91";
   String? verification;
+  String? finalVerification;
   PanelController pc = PanelController();
   ScrollController sc = ScrollController();
 
   GoogleSignInAccount? currentUser;
   bool isAuthorized = true;
-  String name = "?";
+  String profileLink = '';
   GoogleSignIn googleSignIn = GoogleSignIn(
-    clientId:
-        '497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com',
-  );
+      serverClientId:
+          '497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com');
   late String urls;
 
   final _server = FirebaseFirestore.instance;
@@ -113,16 +117,37 @@ class _ProfileState extends State<Profile> {
                               fontFamily: "DMSans"),
                         ),
                         ValueListenableBuilder(
-                          valueListenable: profile,
+                          valueListenable: imageListener,
                           builder: (context, value, child) {
                             return value
-                                ? ProfilePicture(
-                                    name: name,
-                                    role: 'Sportistan Partner',
-                                    radius: 31,
-                                    fontsize: 21,
-                                    tooltip: true,
-                                  )
+                                ? profileLink.isNotEmpty
+                                    ? Image.network(profileLink)
+                                    : Stack(
+                                        alignment: Alignment.bottomRight,
+                                        children: [
+                                          InkWell(
+                                            onTap: () {
+                                              PageRouter.push(context,
+                                                      const CropImageTool())
+                                                  .then((value) => {check()});
+                                            },
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  Colors.orange.shade200,
+                                              maxRadius: 50,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Image.asset(
+                                                    'assets/logo.png'),
+                                              ),
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.camera_alt_rounded,
+                                          )
+                                        ],
+                                      )
                                 : const CircularProgressIndicator(
                                     strokeWidth: 1,
                                   );
@@ -178,26 +203,52 @@ class _ProfileState extends State<Profile> {
                                     fontFamily: "DMSans"),
                               ),
                             ),
-                      Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () async {
-                              LocationPermission permission;
-                              permission = await Geolocator.checkPermission();
-                              if (permission == LocationPermission.always ||
-                                  permission == LocationPermission.whileInUse) {
-                                if (mounted) {
-                                  PageRouter.push(context, const SearchField());
-                                }
-                              } else {
-                                if (mounted) {
-                                  PageRouter.push(
-                                      context, const CheckLocationPermission());
-                                }
-                              }
-                            },
+                      InkWell(
+                        onTap: () {
+                          PageRouter.push(context, const SportistanCredit());
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Add Sportistan Credit",
+                                    style: TextStyle(
+                                        fontFamily: "DMSans",
+                                        fontSize:
+                                            MediaQuery.of(context).size.height /
+                                                50)),
+                                const Icon(
+                                  Icons.credit_score_sharp,
+                                  color: Colors.teal,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () async {
+                          LocationPermission permission;
+                          permission = await Geolocator.checkPermission();
+                          if (permission == LocationPermission.always ||
+                              permission == LocationPermission.whileInUse) {
+                            if (mounted) {
+                              PageRouter.push(context, const SearchField());
+                            }
+                          } else {
+                            if (mounted) {
+                              PageRouter.push(
+                                  context, const CheckLocationPermission());
+                            }
+                          }
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -216,14 +267,14 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       ),
-                      Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () {
-                              PageRouter.push(context, const EditGround());
-                            },
+                      InkWell(
+                        onTap: () {
+                          PageRouter.push(context, const EditGround());
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -242,68 +293,94 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       ),
-                      Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () {
-                              showDialog(
-                                  context: context,
-                                  builder: (ctx) => Platform.isIOS
-                                      ? CupertinoAlertDialog(
-                                          title: const Text("Want to talk?"),
-                                          content: const Text(
-                                              "We will connect to you to a person who will assist you",
+                      InkWell(
+                        onTap: () {
+                          PageRouter.push(context, const VerifiedGrounds());
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(" My Grounds",
+                                    style: TextStyle(
+                                        fontFamily: "DMSans",
+                                        fontSize:
+                                            MediaQuery.of(context).size.height /
+                                                50)),
+                                const Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          showDialog(
+                              context: context,
+                              builder: (ctx) => Platform.isIOS
+                                  ? CupertinoAlertDialog(
+                                      title: const Text("Want to talk?"),
+                                      content: const Text(
+                                          "We will connect to you to a person who will assist you",
+                                          style:
+                                              TextStyle(fontFamily: "DMSans")),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              _callNumber();
+                                            },
+                                            child: const Text(
+                                              "Call Now",
                                               style: TextStyle(
-                                                  fontFamily: "DMSans")),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () {
-                                                  _callNumber();
-                                                },
-                                                child: const Text(
-                                                  "Call Now",
-                                                  style: TextStyle(
-                                                      color: Colors.green),
-                                                )),
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: const Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                )),
-                                          ],
-                                        )
-                                      : AlertDialog(
-                                          title: const Text("Want to talk?"),
-                                          content: const Text(
-                                              "We will connect to you to a person who will assist you"),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () {
-                                                  _callNumber();
-                                                },
-                                                child: const Text(
-                                                  "Call Now",
-                                                  style: TextStyle(
-                                                      color: Colors.green),
-                                                )),
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: const Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                )),
-                                          ],
-                                        ));
-                            },
+                                                  color: Colors.green),
+                                            )),
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(ctx);
+                                            },
+                                            child: const Text(
+                                              "Cancel",
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            )),
+                                      ],
+                                    )
+                                  : AlertDialog(
+                                      title: const Text("Want to talk?"),
+                                      content: const Text(
+                                          "We will connect to you to a person who will assist you"),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              _callNumber();
+                                            },
+                                            child: const Text(
+                                              "Call Now",
+                                              style: TextStyle(
+                                                  color: Colors.green),
+                                            )),
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(ctx);
+                                            },
+                                            child: const Text(
+                                              "Cancel",
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            )),
+                                      ],
+                                    ));
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -322,14 +399,14 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       ),
-                      Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () {
-                              pc.open();
-                            },
+                      InkWell(
+                        onTap: () {
+                          pc.open();
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -348,14 +425,14 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       ),
-                      Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () {
-                              shareApp();
-                            },
+                      InkWell(
+                        onTap: () {
+                          shareApp();
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -367,96 +444,81 @@ class _ProfileState extends State<Profile> {
                                                 50)),
                                 const Icon(
                                   Icons.ios_share_outlined,
-                                  color: Colors.green,
+                                  color: Colors.indigo,
                                 )
                               ],
                             ),
                           ),
                         ),
                       ),
-                      Card(
-                        color: Colors.red,
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.height / 50),
-                          child: InkWell(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => Platform.isAndroid
-                                    ? AlertDialog(
-                                        title: const Text("Delete Ground?"),
-                                        content: const Text(
-                                            "Would you like to delete Account?",
+                      InkWell(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => Platform.isAndroid
+                                ? AlertDialog(
+                                    title: const Text("Delete Ground?"),
+                                    content: const Text(
+                                        "Would you like to delete Account?",
+                                        style: TextStyle(
+                                            color: Colors.red,
+                                            fontFamily: "DMSans")),
+                                    icon: const Icon(
+                                      Icons.delete_forever,
+                                      color: Colors.red,
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(ctx);
+                                            finalOTPController.clear();
+                                            showPopupToVerifyDeletion();
+                                          },
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          )),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                          },
+                                          child: const Text(
+                                            "Cancel",
                                             style: TextStyle(
-                                                color: Colors.red,
-                                                fontFamily: "DMSans")),
-                                        icon: const Icon(
-                                          Icons.delete_forever,
-                                          color: Colors.red,
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () async {
-                                                if (_auth.currentUser != null) {
-                                                  Navigator.pop(ctx);
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                          const SnackBar(
-                                                    content: Text("Deleting"),
-                                                    backgroundColor: Colors.red,
-                                                  ));
-                                                  deleteKYC();
-                                                } else {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(const SnackBar(
-                                                          content: Text(
-                                                              "User Not Logged in")));
-                                                }
-                                              },
-                                              child: const Text(
-                                                "Delete",
-                                                style: TextStyle(
-                                                    color: Colors.red),
-                                              )),
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(ctx);
-                                              },
-                                              child: const Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                    color: Colors.black54),
-                                              ))
-                                        ],
-                                      )
-                                    : CupertinoAlertDialog(
-                                        title: const Text("Delete Ground?"),
-                                        content: const Text(
-                                            "Would you like to delete ground from listing?",
+                                                color: Colors.black54),
+                                          ))
+                                    ],
+                                  )
+                                : CupertinoAlertDialog(
+                                    title: const Text("Delete Ground?"),
+                                    content: const Text(
+                                        "Would you like to delete ground from listing?",
+                                        style: TextStyle(fontFamily: "DMSans")),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {},
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          )),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                          },
+                                          child: const Text(
+                                            "Cancel",
                                             style: TextStyle(
-                                                fontFamily: "DMSans")),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {},
-                                              child: const Text(
-                                                "Delete",
-                                                style: TextStyle(
-                                                    color: Colors.red),
-                                              )),
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(ctx);
-                                              },
-                                              child: const Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                    color: Colors.black54),
-                                              ))
-                                        ],
-                                      ),
-                              );
-                            },
+                                                color: Colors.black54),
+                                          ))
+                                    ],
+                                  ),
+                          );
+                        },
+                        child: Card(
+                          color: Colors.red,
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                MediaQuery.of(context).size.height / 50),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -872,6 +934,48 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  void _showError(String error) {
+    Errors.flushBarAuth(error, context);
+  }
+
+  Future<void> _verifyNumberForDelete({required String number}) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: number,
+      verificationCompleted: (PhoneAuthCredential credential) async {},
+      verificationFailed: (FirebaseAuthException e) {
+        if (e.code == 'invalid-phone-number') {
+          buttonDisable.value = false;
+
+          _showError("'The provided phone number is not valid.'");
+        } else {
+          buttonDisable.value = false;
+
+          _showError(e.message.toString());
+        }
+      },
+      codeSent: (String verificationId, int? resendToken) async {
+        finalVerification = verificationId;
+      },
+      timeout: const Duration(seconds: 60),
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+  }
+
+  Future<void> _manualVerifyNumberForDelete(String smsCode) async {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: finalVerification.toString(), smsCode: smsCode);
+    try {
+      buttonDisable.value = true;
+      await _auth
+          .signInWithCredential(credential)
+          .then((value) => {deleteKYC()});
+    } on FirebaseAuthException catch (e) {
+      buttonDisable.value = false;
+
+      _showError(e.message.toString());
+    }
+  }
+
   Future<void> _manualVerify(String smsCode) async {
     PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: verification.toString(), smsCode: smsCode);
@@ -982,12 +1086,6 @@ class _ProfileState extends State<Profile> {
 
   Future<void> check() async {
     try {
-      await _server
-          .collection("SportistanPartners")
-          .where("userID", isEqualTo: _auth.currentUser!.uid)
-          .get()
-          .then((value) =>
-              {name = value.docs.first.get("name"), profile.value = true});
       GoogleSignInAccount? account = await googleSignIn.signInSilently();
       if (account != null) {
         if (mounted) {
@@ -996,10 +1094,18 @@ class _ProfileState extends State<Profile> {
           });
         }
       }
+      await _server
+          .collection("profileImages")
+          .where("userID", isEqualTo: _auth.currentUser!.uid)
+          .get()
+          .then((value) => {
+                profileLink = value.docs.last.get("profileImageLink"),
+                imageListener.value = true
+              });
     } catch (e) {
       if (mounted) {
-        Errors.flushBarInform(
-            "Ground not found or may deleted", context, "No Ground Found");
+        profileLink = '';
+        imageListener.value = true;
       }
     }
   }
@@ -1037,14 +1143,14 @@ class _ProfileState extends State<Profile> {
                         .ref(value.items[i].fullPath.toString())
                         .delete()
                   },
-                deleteUser()
+                deleteDeviceTokens()
               });
     } catch (e) {
-      deleteUser();
+      deleteDeviceTokens();
     }
   }
 
-  deleteUser() async {
+  deleteDeviceTokens() async {
     try {
       await FirebaseFirestore.instance
           .collection("SportistanPartners")
@@ -1058,6 +1164,27 @@ class _ProfileState extends State<Profile> {
                         .doc(value.docChanges[i].doc.id)
                         .delete()
                   },
+                deleteUser()
+              });
+    } catch (e) {
+      deleteUser();
+    }
+  }
+
+  deleteUser() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection("DeviceTokens")
+          .where("userID", isEqualTo: _auth.currentUser!.uid)
+          .get()
+          .then((value) => {
+                for (int i = 0; i < value.size; i++)
+                  {
+                    FirebaseFirestore.instance
+                        .collection("DeviceTokens")
+                        .doc(value.docChanges[i].doc.id)
+                        .delete()
+                  },
                 deleteUserAccount()
               });
     } catch (e) {
@@ -1068,5 +1195,95 @@ class _ProfileState extends State<Profile> {
   Future<void> deleteUserAccount() async {
     await _auth.signOut().then((value) =>
         {PageRouter.pushRemoveUntil(context, const PhoneAuthentication())});
+  }
+
+  Future<void> showPopupToVerifyDeletion() async {
+    _verifyNumberForDelete(number: _auth.currentUser!.phoneNumber.toString());
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        const focusedBorderColor = Color.fromRGBO(23, 171, 144, 1);
+        const fillColor = Color.fromRGBO(243, 246, 249, 0);
+        const borderColor = Color.fromRGBO(23, 171, 144, 0.4);
+
+        final defaultPinTheme = PinTheme(
+          width: 56,
+          height: 56,
+          textStyle: const TextStyle(
+            fontSize: 22,
+            color: Color.fromRGBO(30, 60, 87, 1),
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(19),
+            border: Border.all(color: borderColor),
+          ),
+        );
+
+        return Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text("Verify OTP to Delete Account",
+                  style: TextStyle(fontSize: 16)),
+            ),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Pinput(
+                controller: finalOTPController,
+                listenForMultipleSmsOnAndroid: true,
+                defaultPinTheme: defaultPinTheme,
+                separatorBuilder: (index) => const SizedBox(width: 8),
+                hapticFeedbackType: HapticFeedbackType.lightImpact,
+                onCompleted: (pin) {
+                  debugPrint('onCompleted: $pin');
+                },
+                length: 6,
+                onChanged: (value) {
+                  debugPrint('onChanged: $value');
+                },
+                cursor: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 9),
+                      width: 22,
+                      height: 1,
+                      color: focusedBorderColor,
+                    ),
+                  ],
+                ),
+                focusedPinTheme: defaultPinTheme.copyWith(
+                  decoration: defaultPinTheme.decoration!.copyWith(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: focusedBorderColor),
+                  ),
+                ),
+                submittedPinTheme: defaultPinTheme.copyWith(
+                  decoration: defaultPinTheme.decoration!.copyWith(
+                    color: fillColor,
+                    borderRadius: BorderRadius.circular(19),
+                    border: Border.all(color: focusedBorderColor),
+                  ),
+                ),
+                errorPinTheme: defaultPinTheme.copyBorderWith(
+                  border: Border.all(color: Colors.redAccent),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CupertinoButton(
+                color: Colors.red,
+                onPressed: () {
+                  _manualVerifyNumberForDelete(finalOTPController.value.text);
+                },
+                child: const Text('Delete Account'),
+              ),
+            ),
+            Flexible(child: Image.asset("assets/deleteAccount.png"))
+          ],
+        );
+      },
+    );
   }
 }

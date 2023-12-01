@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sportistan_partners/utils/register_data_class.dart';
 
@@ -58,318 +57,414 @@ class _EditGroundState extends State<EditGround> {
                         images = docs[index].get("groundImages");
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Card(
-                            color: Colors.grey.shade50,
-                            child: SingleChildScrollView(
-                              child: Column(children: [
-                                ValueListenableBuilder(
-                                  valueListenable: nameChangeListener,
-                                  builder: (context, value, child) {
-                                    return value
-                                        ? Form(
-                                            key: groundKey,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: TextFormField(
-                                                validator: (input) {
-                                                  if (input!.isEmpty) {
-                                                    return "Ground Name is Missing";
-                                                  } else {
-                                                    return null;
-                                                  }
-                                                },
-                                                style: const TextStyle(
-                                                    color: Colors.black87),
-                                                controller: groundController,
-                                                keyboardType:
-                                                    TextInputType.name,
-                                                inputFormatters: [
-                                                  FilteringTextInputFormatter
-                                                      .allow(
-                                                          RegExp("[a-zA-Z]")),
-                                                ],
-                                                decoration: InputDecoration(
-                                                    errorStyle: const TextStyle(
-                                                        color: Colors.red),
-                                                    hintText: "Ground Name",
-                                                    hintStyle: TextStyle(
-                                                        fontSize: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .height /
-                                                            50,
-                                                        color: Colors.black87,
-                                                        fontFamily: "Nunito"),
-                                                    fillColor: Colors.white,
-                                                    filled: true,
-                                                    border:
-                                                        const OutlineInputBorder(
-                                                      borderSide:
-                                                          BorderSide.none,
-                                                    )),
-                                              ),
-                                            ),
-                                          )
-                                        : Card(
-                                            child: Row(
-                                              children: [],
-                                            ),
-                                          );
-                                  },
-                                ),
-                                CarouselSlider.builder(
-                                  itemCount: images.length,
-                                  itemBuilder:
-                                      (BuildContext context, int itemIndex,
-                                              int pageViewIndex) =>
-                                          images.isNotEmpty
-                                              ? Stack(
-                                                  alignment:
-                                                      Alignment.bottomCenter,
-                                                  children: [
-                                                    Image.network(
-                                                      images[itemIndex],
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        return const Text(
-                                                            "Network Error");
-                                                      },
-                                                      loadingBuilder: (context,
-                                                          child,
-                                                          loadingProgress) {
-                                                        if (loadingProgress ==
-                                                            null) {
-                                                          return child;
+                          child: docs[index].get('isVerified')
+                              ? Card(
+                                  color: Colors.grey.shade50,
+                                  child: SingleChildScrollView(
+                                    child: Column(children: [
+                                      ValueListenableBuilder(
+                                        valueListenable: nameChangeListener,
+                                        builder: (context, value, child) {
+                                          return value
+                                              ? Form(
+                                                  key: groundKey,
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: TextFormField(
+                                                      validator: (input) {
+                                                        if (input!.isEmpty) {
+                                                          return "Ground Name is Missing";
+                                                        } else {
+                                                          return null;
                                                         }
-                                                        return const Center(
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                  strokeWidth:
-                                                                      1),
-                                                        );
                                                       },
-                                                    ),
-                                                    MaterialButton(
-                                                      color: Colors.red,
-                                                      onPressed: () {
-                                                        showModalBottomSheet(
-                                                          context: context,
-                                                          builder: (ctx) {
-                                                            return SizedBox(
-                                                              height: MediaQuery.of(
-                                                                          context)
-                                                                      .size
-                                                                      .height /
-                                                                  3,
-                                                              child: Column(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .spaceAround,
-                                                                children: [
-                                                                  Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(
-                                                                            8.0),
-                                                                    child: Text(
-                                                                        'Do you want to delete this photo?',
-                                                                        style: TextStyle(
-                                                                            fontSize: MediaQuery.of(context).size.width /
-                                                                                15,
-                                                                            fontWeight:
-                                                                                FontWeight.bold)),
-                                                                  ),
-                                                                  CupertinoButton(
-                                                                      color: Colors
-                                                                          .red,
-                                                                      child: const Text(
-                                                                          "Yes Delete"),
-                                                                      onPressed:
-                                                                          () async {
-                                                                        newImagesElements
-                                                                            .clear();
-                                                                        try {
-                                                                          await _storage
-                                                                              .refFromURL(images[itemIndex])
-                                                                              .delete();
-                                                                          images
-                                                                              .removeAt(itemIndex);
-                                                                          for (var element
-                                                                              in images) {
-                                                                            newImagesElements.add(element);
-                                                                          }
-                                                                          _server.collection("SportistanPartners").doc(snapshot.data!.docs[index].id).update({
-                                                                            'groundImages':
-                                                                                newImagesElements
-                                                                          }).then((value) =>
-                                                                              {});
-                                                                          if (mounted) {
-                                                                            Navigator.pop(ctx);
-                                                                          }
-                                                                        } catch (e) {
-                                                                          if (mounted) {
-                                                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error")));
-                                                                          }
-                                                                        }
-                                                                      }),
-                                                                  CupertinoButton(
-                                                                      child: const Text(
-                                                                          "Cancel"),
-                                                                      onPressed:
+                                                      style: const TextStyle(
+                                                          color:
+                                                              Colors.black87),
+                                                      controller:
+                                                          groundController,
+                                                      keyboardType:
+                                                          TextInputType.name,
+
+                                                      decoration:
+                                                          InputDecoration(
+                                                              errorStyle:
+                                                                  const TextStyle(
+                                                                      color:
+                                                                          Colors
+                                                                              .red),
+                                                              hintText:
+                                                                  "Ground Name",
+                                                              hintStyle: TextStyle(
+                                                                  fontSize: MediaQuery.of(
+                                                                              context)
+                                                                          .size
+                                                                          .height /
+                                                                      50,
+                                                                  color: Colors
+                                                                      .black87,
+                                                                  fontFamily:
+                                                                      "Nunito"),
+                                                              fillColor: Colors
+                                                                  .white,
+                                                              filled: true,
+                                                              suffixIcon:
+                                                                  InkWell(
+                                                                      onTap:
                                                                           () {
-                                                                        Navigator.pop(
-                                                                            ctx);
-                                                                      }),
-                                                                ],
-                                                              ),
-                                                            );
-                                                          },
-                                                        );
-                                                      },
-                                                      child: const Text(
-                                                          "Delete this Photo",
-                                                          style: TextStyle(
-                                                              color: Colors
-                                                                  .white)),
+                                                                        _server
+                                                                            .collection(
+                                                                                "SportistanPartners")
+                                                                            .doc(docs[index]
+                                                                                .id)
+                                                                            .update({
+                                                                          'groundName': groundController
+                                                                              .value
+                                                                              .text
+                                                                              .trim()
+                                                                              .toString()
+                                                                        }).then((value) =>
+                                                                                {
+                                                                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Updated")))
+                                                                                });
+                                                                      },
+                                                                      child: const Icon(
+                                                                          Icons
+                                                                              .check,
+                                                                          color: Colors
+                                                                              .green)),
+                                                              border:
+                                                                  const OutlineInputBorder(
+                                                                borderSide:
+                                                                    BorderSide
+                                                                        .none,
+                                                              )),
                                                     ),
-                                                  ],
+                                                  ),
                                                 )
-                                              : const Column(
-                                                  children: [
-                                                    Text("No Ground Photos",
-                                                        style: TextStyle(
+                                              : Card(
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceAround,
+                                                    children: [
+                                                      Text(
+                                                          docs[index]
+                                                              ["groundName"],
+                                                          style:
+                                                              const TextStyle(
                                                             fontFamily:
                                                                 "DMSans",
-                                                            fontSize: 16)),
-                                                    Icon(
-                                                      Icons.grass_rounded,
-                                                      color: Colors.green,
-                                                    ),
-                                                  ],
-                                                ),
-                                  options: CarouselOptions(
-                                    initialPage: currentPage,
-                                    enlargeFactor: 0.3,
-                                    scrollDirection: Axis.horizontal,
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: MaterialButton(
-                                          color: Colors.indigo,
-                                          child: const Text("Add Ground Photos",
-                                              style: TextStyle(
-                                                  fontFamily: "DMSans",
-                                                  color: Colors.white)),
-                                          onPressed: () {
-                                            pickImages(
-                                                refID: snapshot
-                                                    .data!.docs[index].id);
-                                          }),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: TextButton(
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (ctx) => Platform.isAndroid
-                                                ? AlertDialog(
-                                                    title: const Text(
-                                                        "Delete Ground?"),
-                                                    content: const Text(
-                                                        "Would you like to delete ground from listing?",
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "DMSans")),
-                                                    icon: const Icon(
-                                                      Icons.delete_forever,
-                                                      color: Colors.red,
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                          onPressed: () async {
-                                                            await _server
-                                                                .collection(
-                                                                    "SportistanPartners")
-                                                                .doc(snapshot
-                                                                    .data!
-                                                                    .docs[index]
-                                                                    .id)
-                                                                .delete()
-                                                                .then(
-                                                                    (value) => {
-                                                                          Navigator.pop(
-                                                                              ctx),
-                                                                          ScaffoldMessenger.of(context)
-                                                                              .showSnackBar(const SnackBar(content: Text("Deleted")))
-                                                                        });
-                                                          },
-                                                          child: const Text(
-                                                            "Delete",
-                                                            style: TextStyle(
-                                                                color:
-                                                                    Colors.red),
                                                           )),
                                                       TextButton(
                                                           onPressed: () {
-                                                            Navigator.pop(ctx);
+                                                            nameChangeListener
+                                                                .value = true;
                                                           },
                                                           child: const Text(
-                                                            "Cancel",
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .black54),
-                                                          ))
-                                                    ],
-                                                  )
-                                                : CupertinoAlertDialog(
-                                                    title: const Text(
-                                                        "Delete Ground?"),
-                                                    content: const Text(
-                                                        "Would you like to delete ground from listing?",
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "DMSans")),
-                                                    actions: [
-                                                      TextButton(
-                                                          onPressed: () {},
-                                                          child: const Text(
-                                                            "Delete",
-                                                            style: TextStyle(
-                                                                color:
-                                                                    Colors.red),
-                                                          )),
-                                                      TextButton(
-                                                          onPressed: () {
-                                                            Navigator.pop(ctx);
-                                                          },
-                                                          child: const Text(
-                                                            "Cancel",
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .black54),
-                                                          ))
+                                                              "Change Name"))
                                                     ],
                                                   ),
-                                          );
+                                                );
                                         },
-                                        child: const Text("Delete Ground",
-                                            style: TextStyle(
-                                                fontFamily: "DMSans",
-                                                color: Colors.red)),
                                       ),
-                                    )
-                                  ],
+                                      CarouselSlider.builder(
+                                        itemCount: images.length,
+                                        itemBuilder:
+                                            (BuildContext context,
+                                                    int itemIndex,
+                                                    int pageViewIndex) =>
+                                                images.isNotEmpty
+                                                    ? Stack(
+                                                        alignment: Alignment
+                                                            .bottomCenter,
+                                                        children: [
+                                                          Image.network(
+                                                            images[itemIndex],
+                                                            errorBuilder:
+                                                                (context, error,
+                                                                    stackTrace) {
+                                                              return const Text(
+                                                                  "Network Error");
+                                                            },
+                                                            loadingBuilder:
+                                                                (context, child,
+                                                                    loadingProgress) {
+                                                              if (loadingProgress ==
+                                                                  null) {
+                                                                return child;
+                                                              }
+                                                              return const Center(
+                                                                child: CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        1),
+                                                              );
+                                                            },
+                                                          ),
+                                                          MaterialButton(
+                                                            color: Colors.red,
+                                                            onPressed: () {
+                                                              showModalBottomSheet(
+                                                                context:
+                                                                    context,
+                                                                builder: (ctx) {
+                                                                  return SizedBox(
+                                                                    height: MediaQuery.of(context)
+                                                                            .size
+                                                                            .height /
+                                                                        3,
+                                                                    child:
+                                                                        Column(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceAround,
+                                                                      children: [
+                                                                        Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              8.0),
+                                                                          child: Text(
+                                                                              'Do you want to delete this photo?',
+                                                                              style: TextStyle(fontSize: MediaQuery.of(context).size.width / 15, fontWeight: FontWeight.bold)),
+                                                                        ),
+                                                                        CupertinoButton(
+                                                                            color:
+                                                                                Colors.red,
+                                                                            child: const Text("Yes Delete"),
+                                                                            onPressed: () async {
+                                                                              newImagesElements.clear();
+                                                                              try {
+                                                                                await _storage.refFromURL(images[itemIndex]).delete();
+                                                                                images.removeAt(itemIndex);
+                                                                                for (var element in images) {
+                                                                                  newImagesElements.add(element);
+                                                                                }
+                                                                                _server.collection("SportistanPartners").doc(snapshot.data!.docs[index].id).update({
+                                                                                  'groundImages': newImagesElements
+                                                                                }).then((value) => {});
+                                                                                if (mounted) {
+                                                                                  Navigator.pop(ctx);
+                                                                                }
+                                                                              } catch (e) {
+                                                                                if (mounted) {
+                                                                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error")));
+                                                                                }
+                                                                              }
+                                                                            }),
+                                                                        CupertinoButton(
+                                                                            child:
+                                                                                const Text("Cancel"),
+                                                                            onPressed: () {
+                                                                              Navigator.pop(ctx);
+                                                                            }),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                            child: const Text(
+                                                                "Delete this Photo",
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white)),
+                                                          ),
+                                                        ],
+                                                      )
+                                                    : const Column(
+                                                        children: [
+                                                          Text(
+                                                              "No Ground Photos",
+                                                              style: TextStyle(
+                                                                  fontFamily:
+                                                                      "DMSans",
+                                                                  fontSize:
+                                                                      16)),
+                                                          Icon(
+                                                            Icons.grass_rounded,
+                                                            color: Colors.green,
+                                                          ),
+                                                        ],
+                                                      ),
+                                        options: CarouselOptions(
+                                          initialPage: currentPage,
+                                          enlargeFactor: 0.3,
+                                          scrollDirection: Axis.horizontal,
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: MaterialButton(
+                                                color: Colors.indigo,
+                                                child: const Text(
+                                                    "Add Ground Photos",
+                                                    style: TextStyle(
+                                                        fontFamily: "DMSans",
+                                                        color: Colors.white)),
+                                                onPressed: () {
+                                                  pickImages(
+                                                      refID: snapshot.data!
+                                                          .docs[index].id);
+                                                }),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextButton(
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (ctx) => Platform
+                                                          .isAndroid
+                                                      ? AlertDialog(
+                                                          title: const Text(
+                                                              "Delete Ground?"),
+                                                          content: const Text(
+                                                              "Would you like to delete ground from listing?",
+                                                              style: TextStyle(
+                                                                  fontFamily:
+                                                                      "DMSans")),
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .delete_forever,
+                                                            color: Colors.red,
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                                onPressed:
+                                                                    () async {
+                                                                  await _server
+                                                                      .collection(
+                                                                          "SportistanPartners")
+                                                                      .doc(snapshot
+                                                                          .data!
+                                                                          .docs[
+                                                                              index]
+                                                                          .id)
+                                                                      .delete()
+                                                                      .then(
+                                                                          (value) =>
+                                                                              {
+                                                                                Navigator.pop(ctx),
+                                                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Deleted")))
+                                                                              });
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                  "Delete",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .red),
+                                                                )),
+                                                            TextButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      ctx);
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                  "Cancel",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .black54),
+                                                                ))
+                                                          ],
+                                                        )
+                                                      : CupertinoAlertDialog(
+                                                          title: const Text(
+                                                              "Delete Ground?"),
+                                                          content: const Text(
+                                                              "Would you like to delete ground from listing?",
+                                                              style: TextStyle(
+                                                                  fontFamily:
+                                                                      "DMSans")),
+                                                          actions: [
+                                                            TextButton(
+                                                                onPressed:
+                                                                    () {},
+                                                                child:
+                                                                    const Text(
+                                                                  "Delete",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .red),
+                                                                )),
+                                                            TextButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      ctx);
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                  "Cancel",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .black54),
+                                                                ))
+                                                          ],
+                                                        ),
+                                                );
+                                              },
+                                              child: const Text("Delete Ground",
+                                                  style: TextStyle(
+                                                      fontFamily: "DMSans",
+                                                      color: Colors.red)),
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    ]),
+                                  ),
                                 )
-                              ]),
-                            ),
-                          ),
+                              : Center(
+                                  child: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height / 8,
+                                    width: double.infinity,
+                                    child: Card(
+                                      child: Center(
+                                          child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            docs[index].get('groundName'),
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              color: Colors.black54,
+                                                fontFamily: "DMSans"
+
+                                            ),
+                                            softWrap: true,
+                                          ),
+                                          const Text(
+                                            'Ground Not Verified Yet',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.red,
+                                                fontFamily: "DMSans"
+
+                                            ),
+                                            softWrap: true,
+                                          ),
+                                          const Text(
+                                            'Your Ground will verify within 24 hours',
+                                            style: TextStyle(
+                                              color: Colors.black87,
+                                              fontFamily: "DMSans"
+                                            ),
+                                            softWrap: true,
+                                          ),
+                                        ],
+                                      )),
+                                    ),
+                                  ),
+                                ),
                         );
                       },
                     )

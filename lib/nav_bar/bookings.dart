@@ -62,95 +62,97 @@ class _BookingsState extends State<Bookings> {
     super.initState();
   }
 
+  List<dynamic> entireDayBookingSlots = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xff2b2636),
         body: ValueListenableBuilder(
-          valueListenable: switchGrounds,
-          builder: (context, value, child) => SafeArea(
-            child: value
-                ? SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-                  child: Column(
+      valueListenable: switchGrounds,
+      builder: (context, value, child) => SafeArea(
+        child: value
+            ? SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child:
-                                  Icon(Icons.calendar_today, color: Colors.white),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text("Bookings",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: "DMSans",
-                                    fontSize:
-                                        MediaQuery.of(context).size.height / 25,
-                                  ) //TextStyle
-                                  ),
-                            ),
-                          ],
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child:
+                              Icon(Icons.calendar_today, color: Colors.black),
                         ),
-                        Card(
-                          shadowColor: Colors.green,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              DropdownButton(
-                                elevation: 0,
-                                underline: Container(),
-                                value: dropDownValue,
-                                dropdownColor: Colors.white,
-                                style: TextStyle(
-                                  fontFamily: "DMSans",
-                                  fontSize:
-                                      MediaQuery.of(context).size.height / 50,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                items: dropDownList.map((String items) {
-                                  groundIndex =
-                                      dropDownList.indexOf(dropDownValue);
-                                  return DropdownMenuItem(
-                                    value: items,
-                                    child: Text(items),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  if (dropDownValue != newValue) {
-                                    dropDownValue = newValue!;
-                                    setState(() {});
-                                  }
-                                },
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text("Bookings",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "DMSans",
+                                fontSize:
+                                    MediaQuery.of(context).size.height / 25,
+                              ) //TextStyle
                               ),
-                            ],
-                          ),
                         ),
-                        StreamBuilder<QuerySnapshot>(
-                            stream: _server
-                                .collection("GroundBookings")
-                                .where("bookingCreated",
-                                    isLessThanOrEqualTo: DateTime(dateTime.year,
-                                            dateTime.month, dateTime.day)
-                                        .add(const Duration(days: 30)))
-                                .where("groundID",
-                                    isEqualTo: groundID[groundIndex])
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              return snapshot.hasData
-                                  ? snapshot.data!.size != 0 ? ListView.builder(
+                      ],
+                    ),
+                    const Text("Change Ground"),
+                    Card(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DropdownButton(
+                            elevation: 0,
+                            underline: Container(),
+                            value: dropDownValue,
+                            dropdownColor: Colors.white,
+                            style: TextStyle(
+                              fontFamily: "DMSans",
+                              fontSize: MediaQuery.of(context).size.height / 50,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            items: dropDownList.map((String items) {
+                              groundIndex = dropDownList.indexOf(dropDownValue);
+                              return DropdownMenuItem(
+                                value: items,
+                                child: Text(items),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (dropDownValue != newValue) {
+                                dropDownValue = newValue!;
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    StreamBuilder<QuerySnapshot>(
+                        stream: _server
+                            .collection("GroundBookings")
+                            .where("bookingCreated",
+                                isLessThanOrEqualTo: DateTime(dateTime.year,
+                                        dateTime.month, dateTime.day)
+                                    .add(const Duration(days: 30)))
+                            .where("groundID", isEqualTo: groundID[groundIndex])
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? snapshot.data!.size != 0
+                                  ? ListView.builder(
                                       physics: const BouncingScrollPhysics(),
                                       shrinkWrap: true,
                                       itemCount: snapshot.data!.docs.length,
                                       itemBuilder: (context, index) {
                                         DocumentSnapshot doc =
                                             snapshot.data!.docs[index];
-
+                                        List<dynamic> allSlotsRef = [];
+                                        if (doc['entireDayBooking']) {
+                                          allSlotsRef = doc['includeSlots'];
+                                        }
                                         return Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: InkWell(
@@ -200,16 +202,16 @@ class _BookingsState extends State<Bookings> {
                                                     title: Text(doc["slotTime"],
                                                         style: const TextStyle(
                                                             fontSize: 20)),
-                                                    subtitle: Text(
-                                                        DateFormat.yMEd().format(
-                                                            DateTime.parse(
-                                                                doc["group"]))),
-                                                    trailing: const Icon(
-                                                        Icons.arrow_forward_ios),
+                                                    subtitle: Text(DateFormat
+                                                            .yMEd()
+                                                        .format(DateTime.parse(
+                                                            doc["group"]))),
+                                                    trailing: const Icon(Icons
+                                                        .arrow_forward_ios),
                                                     leading: CircleAvatar(
                                                       backgroundColor:
-                                                          setStatusColor(
-                                                              doc["slotStatus"]),
+                                                          setStatusColor(doc[
+                                                              "slotStatus"]),
                                                       child: const Icon(
                                                           Icons.calendar_today,
                                                           color: Colors.white),
@@ -219,55 +221,91 @@ class _BookingsState extends State<Bookings> {
                                                     children: [
                                                       Padding(
                                                         padding:
-                                                            const EdgeInsets.all(
-                                                                8.0),
+                                                            const EdgeInsets
+                                                                .all(8.0),
                                                         child: Text(
                                                             '(${doc["slotStatus"]})',
-                                                            style:  TextStyle(
+                                                            style: TextStyle(
                                                                 fontSize: 15,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: setStatusColor(doc["slotStatus"]),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: setStatusColor(doc[
+                                                                    "slotStatus"]),
                                                                 fontFamily:
                                                                     "DMSans")),
                                                       ),
                                                       Padding(
                                                         padding:
-                                                            const EdgeInsets.all(
-                                                                8.0),
-                                                        child: doc["feesDue"] == 0
-                                                            ? const Text(
-                                                                "Paid",
-                                                                style: TextStyle(
-                                                                    color: Colors
-                                                                        .green),
-                                                              )
-                                                            : Row(
-                                                                children: [
-                                                                  Text(
-                                                                    "Due Amount : Rs.",
-                                                                    style:
-                                                                        TextStyle(
-                                                                      color: Colors
-                                                                          .red
-                                                                          .shade200,
-                                                                    ),
-                                                                  ),
-                                                                  Text(
-                                                                      doc["feesDue"]
-                                                                          .toString(),
-                                                                      style: TextStyle(
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child:
+                                                            doc["feesDue"] == 0
+                                                                ? const Text(
+                                                                    "Paid",
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .green),
+                                                                  )
+                                                                : Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        "Due Amount : Rs.",
+                                                                        style:
+                                                                            TextStyle(
                                                                           color: Colors
                                                                               .red
                                                                               .shade200,
-                                                                          fontSize:
-                                                                              15,
-                                                                          fontFamily:
-                                                                              "DMSans")),
-                                                                ],
-                                                              ),
+                                                                        ),
+                                                                      ),
+                                                                      Text(
+                                                                          doc["feesDue"]
+                                                                              .toString(),
+                                                                          style: TextStyle(
+                                                                              color: Colors.red.shade200,
+                                                                              fontSize: 15,
+                                                                              fontFamily: "DMSans")),
+                                                                    ],
+                                                                  ),
                                                       ),
                                                     ],
                                                   ),
+                                                  doc.get('entireDayBooking')
+                                                      ? SizedBox(
+                                                          width:
+                                                              double.infinity,
+                                                          height: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .height /
+                                                              15,
+                                                          child:
+                                                              ListView.builder(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            shrinkWrap: true,
+                                                            itemCount:
+                                                                allSlotsRef
+                                                                    .length,
+                                                            itemBuilder:
+                                                                (context,
+                                                                    index) {
+                                                              return Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: OutlinedButton(
+                                                                    onPressed:
+                                                                        null,
+                                                                    child: Text(
+                                                                        allSlotsRef[index]
+                                                                            .toString())),
+                                                              );
+                                                            },
+                                                          ),
+                                                        )
+                                                      : Container(),
                                                 ],
                                               ),
                                             ),
@@ -275,49 +313,55 @@ class _BookingsState extends State<Bookings> {
                                         );
                                       })
                                   : Column(
-                                children: [
-                                  Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          "No Booking Found in ${dropDownList[groundIndex].toString()}",
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontFamily: "DMSans"),
-                                        ),
-                                      )),
-                                  Image.asset(
-                                    "assets/logo.png",
-                                    color: Colors.white,
-                                    width:
-                                    MediaQuery.of(context).size.height /
-                                        8,
-                                    height:
-                                    MediaQuery.of(context).size.height /
-                                        8,
-                                  )
-                                ],
-                              ) : const Column(
-                                children: [
-                                  Center(
-                                      child: CircularProgressIndicator(color: Colors.white,strokeWidth: 2,),
-                                  )
-                                ],
-                              );
-                            })
-                      ],
-                    ),
-                )
-                : const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                        Center(
-                            child: CircularProgressIndicator(
-                          strokeWidth: 1,
-                        ))
-                      ]),
-          ),
-        ));
+                                      children: [
+                                        Center(
+                                            child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            "No Booking Found in ${dropDownList[groundIndex].toString()}",
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: "DMSans"),
+                                          ),
+                                        )),
+                                        Image.asset(
+                                          "assets/logo.png",
+                                          color: Colors.black54,
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .height /
+                                              8,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height /
+                                              8,
+                                        )
+                                      ],
+                                    )
+                              : const Column(
+                                  children: [
+                                    Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  ],
+                                );
+                        })
+                  ],
+                ),
+              )
+            : const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                    Center(
+                        child: CircularProgressIndicator(
+                      strokeWidth: 1,
+                    ))
+                  ]),
+      ),
+    ));
   }
 
   Color setStatusColor(String result) {

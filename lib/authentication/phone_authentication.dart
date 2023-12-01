@@ -63,8 +63,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   }
 
   GoogleSignIn googleSignIn = GoogleSignIn(
-    clientId:
-        '497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com',
+    serverClientId: "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
   );
   final Uri toLaunch = Uri(
       scheme: 'https', host: 'www.sportistan.co.in', path: 'Terms&Services');
@@ -273,6 +272,10 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                               ),
                             );
                           },
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text("Continue With Number to Register New Account",style: TextStyle(fontFamily: "DMSans",fontWeight: FontWeight.bold,color: Colors.black54,),),
                         ),
                         ValueListenableBuilder(
                           valueListenable: loading,
@@ -521,7 +524,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
           buttonDisable.value = true;
           await _auth
               .signInWithCredential(credential)
-              .then((value) => {_checkUserExistenceWitPhone()});
+              .then((value) => {_checkUserExistenceWithPhone()});
         } on FirebaseAuthException catch (e) {
           buttonDisable.value = false;
           _showError(e.message.toString());
@@ -553,7 +556,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       buttonDisable.value = true;
       await _auth
           .signInWithCredential(credential)
-          .then((value) => {_checkUserExistenceWitPhone()});
+          .then((value) => {_checkUserExistenceWithPhone()});
     } on FirebaseAuthException catch (e) {
       buttonDisable.value = false;
 
@@ -655,19 +658,25 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       _moveToHome();
     }
   }
-Future<void> _checkUserExistenceWitPhone() async {
-
-    CollectionReference collectionReference = _server
-        .collection("SportistanPartnersProfile")
-        .doc(_auth.currentUser!.uid)
-        .collection("Account");
-    QuerySnapshot querySnapshot = await collectionReference.get();
-    if (querySnapshot.docs.isEmpty) {
-
+Future<void> _checkUserExistenceWithPhone() async {
+  List<DocumentChange<Map<String, dynamic>>> data = [];
+    try{
+  await _server
+          .collection("SportistanPartners").where("userID",isEqualTo: _auth.currentUser!.uid).get().then((value) => {
+    data = value.docChanges
+      });
+      if (data.isEmpty) {
         _moveToRegister();
-    } else {
-      _moveToHome();
+      } else {
+        _moveToHome();
+      }
+    }catch(e){
+      if(mounted){
+        Errors.flushBarInform(e.toString(), context, "Error");
+      return;
+      }
     }
+
   }
 
 

@@ -8,9 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:fluttercontactpicker/fluttercontactpicker.dart';
 import 'package:intl/intl.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/nav_bar/booking_info.dart';
+import 'package:sportistan_partners/nav_bar/profile_edit/sportistan_credit.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'package:http/http.dart' as http;
@@ -53,6 +53,9 @@ class _BookASlotState extends State<BookASlot> {
   TextEditingController teamControllerB = TextEditingController();
   TextEditingController priceController = TextEditingController();
   TextEditingController advancePaymentController = TextEditingController();
+  TextEditingController advancePaymentControllerTeamB = TextEditingController();
+  GlobalKey<FormState> advancePaymentKey = GlobalKey<FormState>();
+  GlobalKey<FormState> advancePaymentKeyTeamB = GlobalKey<FormState>();
   TextEditingController nameControllerB = TextEditingController();
   TextEditingController nameControllerA = TextEditingController();
   TextEditingController numberControllerA = TextEditingController();
@@ -61,13 +64,14 @@ class _BookASlotState extends State<BookASlot> {
   GlobalKey<FormState> nameKeyB = GlobalKey<FormState>();
   GlobalKey<FormState> numberKeyA = GlobalKey<FormState>();
   GlobalKey<FormState> numberKeyB = GlobalKey<FormState>();
-  GlobalKey<FormState> advancePaymentKey = GlobalKey<FormState>();
   GlobalKey<FormState> teamControllerKeyA = GlobalKey<FormState>();
   GlobalKey<FormState> teamControllerKeyB = GlobalKey<FormState>();
 
   ValueNotifier<bool> checkBoxTeamB = ValueNotifier<bool>(false);
   ValueNotifier<bool> showTeamB = ValueNotifier<bool>(false);
-  ValueNotifier<bool> amountUpdateListener = ValueNotifier<bool>(false);
+  ValueNotifier<bool> readOnly = ValueNotifier<bool>(true);
+  ValueNotifier<bool> amountUpdateListener = ValueNotifier<bool>(true);
+  ValueNotifier<bool> copyAsAbove = ValueNotifier<bool>(false);
 
   bool amountUpdated = false;
 
@@ -81,6 +85,8 @@ class _BookASlotState extends State<BookASlot> {
 
   bool updateSmsAlert = false;
 
+  bool alreadyCommissionCharged = false;
+
   Future<void> serverInit() async {
     if (widget.bookingID.isNotEmpty) {
       await _server
@@ -93,29 +99,37 @@ class _BookASlotState extends State<BookASlot> {
                     updatedPrice = value.docs[0]["feesDue"],
                     advancePaymentController.text =
                         value.docs[0]["advancePayment"].toString(),
-                    teamControllerA.text = value.docs[0]["teamA"]["teamName"],
-                    teamControllerB.text = value.docs[0]["teamB"]["teamName"],
+                    teamControllerA.text =
+                        value.docs.first["teamA"]["teamName"],
+                    teamControllerB.text =
+                        value.docs.first["teamB"]["teamName"],
                     numberControllerA.text =
-                        value.docs[0]["teamA"]["phoneNumber"],
+                        value.docs.first["teamA"]["phoneNumber"],
                     numberControllerB.text =
-                        value.docs[0]["teamB"]["phoneNumber"],
-                    nameControllerA.text = value.docs[0]["teamA"]["personName"],
-                    nameControllerB.text = value.docs[0]["teamB"]["personName"],
-                    notesTeamA.text = value.docs[0]["teamA"]["notesTeamA"],
-                    notesTeamB.text = value.docs[0]["teamB"]["notesTeamB"],
-                    updatedPrice = value.docs[0]["slotPrice"],
+                        value.docs.first["teamB"]["phoneNumber"],
+                    nameControllerA.text =
+                        value.docs.first["teamA"]["personName"],
+                    nameControllerB.text =
+                        value.docs.first["teamB"]["personName"],
+                    notesTeamA.text = value.docs.first["teamA"]["notesTeamA"],
+                    notesTeamB.text = value.docs.first["teamB"]["notesTeamB"],
+                    updatedPrice = value.docs.first["slotPrice"],
                     priceController.text =
-                        value.docs[0]["slotPrice"].toString(),
+                        value.docs.first["totalSlotPrice"].toString(),
+                    checkBoxTeamB.value = true,
+                    readOnly.value = false,
+                    showTeamB.value = true,
+                    amountUpdateListener.value = false,alreadyCommissionCharged = true,
+                    checkKYC()
                   }
               });
     } else {
       priceController.text = widget.slotPrice.toString();
       updatedPrice = widget.slotPrice;
-    }
-    setState(() {
       double newAmount = updatedPrice / 2.toInt().round();
       priceController.text = newAmount.round().toInt().toString();
-    });
+      checkKYC();
+    }
   }
 
   @override
@@ -154,98 +168,78 @@ class _BookASlotState extends State<BookASlot> {
         }
       }
     } else {
-      requestPermission();
+      requestPermission(controller);
     }
   }
 
-  requestPermission() async {
+  requestPermission(controller) async {
     await FlutterContactPicker.requestPermission();
+    checkPermissionForContacts(controller);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SlidingUpPanel(
-        borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-        minHeight: MediaQuery.of(context).size.height / 1.3,
-        maxHeight: MediaQuery.of(context).size.height / 1.2,
-        panelBuilder: (sc) => _panel(sc),
-        body: SafeArea(
-          child: Card(
-            child: Column(
-              children: [
-                Text(
-                  widget.groundName,
-                  style: TextStyle(
-                      color: Colors.black87,
-                      fontFamily: "Nunito",
-                      fontSize: MediaQuery.of(context).size.width / 25),
-                ),
-                Text(
-                  textAlign: TextAlign.center,
-                  widget.groundAddress,
-                  style: TextStyle(
-                      color: Colors.black87,
-                      fontFamily: "Nunito",
-                      fontSize: MediaQuery.of(context).size.width / 25),
-                ),
-                Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            children: [
-                              const Text("Slot Time :",
-                                  style: TextStyle(
-                                      color: Colors.black45,
-                                      fontWeight: FontWeight.bold)),
-                              Text(widget.slotTime,
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Text("Date :",
-                                  style: TextStyle(
-                                      color: Colors.black45,
-                                      fontWeight: FontWeight.bold)),
-                              Text(
-                                  DateFormat.yMMMd()
-                                      .format(DateTime.parse(widget.group)),
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  _panel(ScrollController sc) {
-    return MediaQuery.removePadding(
-        context: context,
-        removeTop: true,
+      body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
-            children: <Widget>[
+            children: [
+              Text(
+                widget.groundName,
+                style: TextStyle(
+                    color: Colors.black87,
+                    fontFamily: "Nunito",
+                    fontSize: MediaQuery.of(context).size.width / 25),
+              ),
+              Text(
+                textAlign: TextAlign.center,
+                widget.groundAddress,
+                style: TextStyle(
+                    color: Colors.black87,
+                    fontFamily: "Nunito",
+                    fontSize: MediaQuery.of(context).size.width / 25),
+              ),
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Row(
+                          children: [
+                            const Text("Slot Time :",
+                                style: TextStyle(
+                                    color: Colors.black45,
+                                    fontWeight: FontWeight.bold)),
+                            Text(widget.slotTime,
+                                style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Text("Date :",
+                                style: TextStyle(
+                                    color: Colors.black45,
+                                    fontWeight: FontWeight.bold)),
+                            Text(
+                                DateFormat.yMMMd()
+                                    .format(DateTime.parse(widget.group)),
+                                style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               widget.bookingID.isNotEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -275,60 +269,6 @@ class _BookASlotState extends State<BookASlot> {
                       ),
                     )
                   : Container(),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    CupertinoButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          "Go Back",
-                          style: TextStyle(color: Colors.red),
-                        )),
-                    MaterialButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30)),
-                        color: Colors.green,
-                        onPressed: () {
-                          if (nameKeyA.currentState!.validate() &
-                              numberKeyA.currentState!.validate() &
-                              teamControllerKeyA.currentState!.validate()) {
-                            if (checkBoxTeamB.value) {
-                              if (nameKeyB.currentState!.validate() &
-                                  numberKeyB.currentState!.validate() &
-                                  teamControllerKeyB.currentState!.validate()) {
-                                if (numberControllerA.value.text !=
-                                    numberControllerB.value.text) {}
-                                if (advancePaymentKey.currentState!
-                                    .validate()) {
-                                  _bookSlot();
-                                }
-                              } else {
-                                Errors.flushBarInform(
-                                    "Field Required for Team B*",
-                                    context,
-                                    "Enter field");
-                              }
-                            } else {
-                              if (advancePaymentKey.currentState!.validate()) {
-                                _bookSlot();
-                              }
-                            }
-                          } else {
-                            Errors.flushBarInform("Field Required for Team A*",
-                                context, "Enter field");
-                          }
-                        },
-                        child: const Text(
-                          "Book Slot",
-                          style: TextStyle(color: Colors.white),
-                        )),
-                  ],
-                ),
-              ),
               SizedBox(
                 width: double.infinity,
                 child: Card(
@@ -500,9 +440,14 @@ class _BookASlotState extends State<BookASlot> {
                                     child: Form(
                                       key: advancePaymentKey,
                                       child: TextFormField(
+                                        enabled: value,
                                         controller: advancePaymentController,
                                         validator: (value) {
                                           if (value!.isEmpty) {
+                                            Errors.flushBarInform(
+                                                "Advance Amount is Missing",
+                                                context,
+                                                "Error");
                                             return "Enter Advance";
                                           } else if (double.parse(
                                                       advancePaymentController
@@ -526,6 +471,7 @@ class _BookASlotState extends State<BookASlot> {
                                           AutofillHints.telephoneNumberLocal
                                         ],
                                         decoration: const InputDecoration(
+                                          label: Text("Advance Team A"),
                                           fillColor: Colors.white,
                                           border: InputBorder.none,
                                           errorStyle:
@@ -536,33 +482,39 @@ class _BookASlotState extends State<BookASlot> {
                                       ),
                                     ),
                                   ),
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width / 3,
-                                    child: TextFormField(
-                                      onTap: () {
-                                        amountUpdateListener.value = true;
-                                      },
-                                      keyboardType: TextInputType.phone,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ],
-                                      controller: priceController,
-                                      decoration: const InputDecoration(
-                                        suffixIcon: Icon(Icons.edit,
-                                            color: Colors.blue),
-                                        prefix: Text("₹",
-                                            style:
-                                                TextStyle(color: Colors.green)),
-                                        fillColor: Colors.white,
-                                        border: InputBorder.none,
-                                        filled: true,
-                                        label: Text("Slot Price"),
-                                        hintStyle:
-                                            TextStyle(color: Colors.black),
-                                      ),
-                                    ),
-                                  ),
+                                  ValueListenableBuilder(
+                                    valueListenable: readOnly,
+                                    builder: (context, value, child) {
+                                      return SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width /
+                                                3,
+                                        child: TextFormField(
+                                          enabled: false,
+                                          onTap: () {
+                                            amountUpdateListener.value = true;
+                                          },
+                                          keyboardType: TextInputType.phone,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly
+                                          ],
+                                          controller: priceController,
+                                          decoration: const InputDecoration(
+                                            prefix: Text("₹",
+                                                style: TextStyle(
+                                                    color: Colors.green)),
+                                            fillColor: Colors.white,
+                                            border: InputBorder.none,
+                                            filled: true,
+                                            label: Text("Slot Price"),
+                                            hintStyle:
+                                                TextStyle(color: Colors.black),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
                                 ],
                               ),
                               value
@@ -622,50 +574,62 @@ class _BookASlotState extends State<BookASlot> {
                                             children: [
                                               CupertinoSwitch(
                                                   value: value,
-                                                  onChanged: (result) {
-                                                    if (nameKeyA.currentState!
-                                                            .validate() &
-                                                        numberKeyA.currentState!
-                                                            .validate() &
-                                                        teamControllerKeyA
-                                                            .currentState!
-                                                            .validate()) {
-                                                      checkBoxTeamB.value =
-                                                          result;
-                                                      teamControllerB.text =
-                                                          teamControllerA
-                                                              .value.text;
-                                                      nameControllerB.text =
-                                                          nameControllerA
-                                                              .value.text;
-                                                      numberControllerB.text =
-                                                          numberControllerA
-                                                              .value.text;
-                                                      showTeamB.value = result;
-                                                      if (result) {
-                                                        setState(() {
-                                                          int newAmount =
-                                                              updatedPrice;
-                                                          priceController.text =
-                                                              newAmount
-                                                                  .toString();
-                                                        });
-                                                      } else {
-                                                        setState(() {
-                                                          double newAmount =
-                                                              updatedPrice /
-                                                                  2
-                                                                      .toInt()
-                                                                      .round();
-                                                          priceController.text =
-                                                              newAmount
-                                                                  .round()
-                                                                  .toInt()
-                                                                  .toString();
-                                                        });
-                                                      }
-                                                    }
-                                                  }),
+                                                  onChanged: widget
+                                                          .bookingID.isNotEmpty
+                                                      ? null
+                                                      : (result) {
+                                                          if (nameKeyA
+                                                                  .currentState!
+                                                                  .validate() &
+                                                              numberKeyA
+                                                                  .currentState!
+                                                                  .validate() &
+                                                              teamControllerKeyA
+                                                                  .currentState!
+                                                                  .validate()) {
+                                                            checkBoxTeamB
+                                                                .value = result;
+                                                            teamControllerB
+                                                                    .text =
+                                                                teamControllerA
+                                                                    .value.text;
+                                                            nameControllerB
+                                                                    .text =
+                                                                nameControllerA
+                                                                    .value.text;
+                                                            numberControllerB
+                                                                    .text =
+                                                                numberControllerA
+                                                                    .value.text;
+                                                            showTeamB.value =
+                                                                result;
+                                                            if (result) {
+                                                              setState(() {
+                                                                int newAmount =
+                                                                    updatedPrice;
+                                                                priceController
+                                                                        .text =
+                                                                    newAmount
+                                                                        .toString();
+                                                              });
+                                                            } else {
+                                                              setState(() {
+                                                                double
+                                                                    newAmount =
+                                                                    updatedPrice /
+                                                                        2
+                                                                            .toInt()
+                                                                            .round();
+                                                                priceController
+                                                                        .text =
+                                                                    newAmount
+                                                                        .round()
+                                                                        .toInt()
+                                                                        .toString();
+                                                              });
+                                                            }
+                                                          }
+                                                        }),
                                               const Text(
                                                 "Book for both Teams",
                                                 style: TextStyle(
@@ -706,12 +670,107 @@ class _BookASlotState extends State<BookASlot> {
                                   ),
                                 ],
                               ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  MaterialButton(
+                                      color: Colors.red,
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text(
+                                        "Go Back",
+                                        style: TextStyle(color: Colors.white),
+                                      )),
+                                  MaterialButton(
+                                      color: Colors.green,
+                                      onPressed: () {
+                                        if (nameKeyA.currentState!.validate() &
+                                            numberKeyA.currentState!
+                                                .validate() &
+                                            teamControllerKeyA.currentState!
+                                                .validate()) {
+                                          if (checkBoxTeamB.value) {
+                                            if (nameKeyB.currentState!
+                                                    .validate() &
+                                                numberKeyB.currentState!
+                                                    .validate() &
+                                                teamControllerKeyB.currentState!
+                                                    .validate()) {
+                                              if (numberControllerA
+                                                      .value.text !=
+                                                  numberControllerB
+                                                      .value.text) {}
+                                              if (advancePaymentKey
+                                                  .currentState!
+                                                  .validate()) {
+                                                if (advancePaymentKeyTeamB
+                                                    .currentState!
+                                                    .validate()) {
+                                                  _bookSlot();
+                                                }
+                                              }
+                                            } else {
+                                              Errors.flushBarInform(
+                                                  "Field Required for Team B*",
+                                                  context,
+                                                  "Enter field");
+                                            }
+                                          } else {
+                                            if (advancePaymentKey.currentState!
+                                                .validate()) {
+                                              _bookSlot();
+                                            }
+                                          }
+                                        } else {
+                                          Errors.flushBarInform(
+                                              "Field Required for Team A*",
+                                              context,
+                                              "Enter field");
+                                        }
+                                      },
+                                      child: const Text(
+                                        "Book Slot",
+                                        style: TextStyle(color: Colors.white),
+                                      ))
+                                ],
+                              ),
                             ],
                           );
                         },
                       ),
                       Column(
                         children: [
+                          widget.bookingID.isEmpty
+                              ? Container()
+                              : const Text("Copy As Above Team Details?"),
+                          widget.bookingID.isEmpty
+                              ? Container()
+                              : ValueListenableBuilder(
+                                  valueListenable: copyAsAbove,
+                                  builder: (context, value, child) {
+                                    return CupertinoSwitch(
+                                      value: value,
+                                      onChanged: (value) {
+                                        if (copyAsAbove.value) {
+                                          copyAsAbove.value = false;
+                                          nameControllerB.clear();
+                                          numberControllerB.clear();
+                                          teamControllerB.clear();
+                                        } else {
+                                          nameControllerB.text =
+                                              nameControllerA.value.text;
+                                          numberControllerB.text =
+                                              numberControllerA.value.text;
+                                          teamControllerB.text =
+                                              teamControllerA.value.text;
+                                          copyAsAbove.value = true;
+                                        }
+                                      },
+                                    );
+                                  },
+                                ),
                           ValueListenableBuilder(
                             valueListenable: showTeamB,
                             builder: (context, value, child) {
@@ -883,6 +942,59 @@ class _BookASlotState extends State<BookASlot> {
                                             ),
                                           ),
                                         ),
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              3,
+                                          child: Form(
+                                            key: advancePaymentKeyTeamB,
+                                            child: TextFormField(
+                                              enabled: value,
+                                              controller:
+                                                  advancePaymentControllerTeamB,
+                                              validator: (value) {
+                                                if (value!.isEmpty) {
+                                                  Errors.flushBarInform(
+                                                      "Advance Amount is Missing",
+                                                      context,
+                                                      "Error");
+                                                  return "Enter Advance";
+                                                } else if (double.parse(
+                                                            advancePaymentControllerTeamB
+                                                                .value.text)
+                                                        .round()
+                                                        .toInt() >
+                                                    double.parse(priceController
+                                                            .value.text)
+                                                        .round()
+                                                        .toInt()) {
+                                                  return "Invalid Amount";
+                                                } else {
+                                                  return null;
+                                                }
+                                              },
+                                              keyboardType: TextInputType.phone,
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .digitsOnly
+                                              ],
+                                              autofillHints: const [
+                                                AutofillHints
+                                                    .telephoneNumberLocal
+                                              ],
+                                              decoration: const InputDecoration(
+                                                label: Text("Advance Team B"),
+                                                fillColor: Colors.white,
+                                                border: InputBorder.none,
+                                                errorStyle: TextStyle(
+                                                    color: Colors.red),
+                                                filled: true,
+                                                hintText: "Booking Amt?",
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: SizedBox(
@@ -917,139 +1029,25 @@ class _BookASlotState extends State<BookASlot> {
               ),
             ],
           ),
-        ));
+        ),
+      ),
+    );
   }
+
+  late List<DocumentChange<Map<String, dynamic>>> data;
 
   Future<void> _bookSlot() async {
-    await alertUser();
-    await showLoading();
-    if (widget.bookingID.isEmpty) {
-      String uniqueID = UniqueID.generateRandomString();
-      try {
-        await _server.collection("GroundBookings").add({
-          'slotTime': widget.slotTime,
-          'bookingPerson': 'Ground Owner',
-          'groundName': widget.groundName,
-          'bookingCreated': DateTime.parse(widget.date),
-          'bookedAt': DateTime.now(),
-          'userID': _auth.currentUser!.uid,
-          'group': widget.group,
-          'isBookingCancelled': false,
-          'feesDue':
-              updatedPrice - int.parse(advancePaymentController.value.text),
-          'paymentMode': PaymentMode.type,
-          'ratingGiven': false,
-          'rating': 3.0,
-          'bothTeamBooked': checkBoxTeamB.value,
-          'groundID': widget.groundID,
-          "teamA": {
-            'teamName': teamControllerA.value.text,
-            'personName': nameControllerA.value.text,
-            'phoneNumber': numberControllerA.value.text,
-            "notesTeamA": notesTeamA.value.text.isNotEmpty
-                ? notesTeamA.value.text.toString()
-                : "",
-          },
-          "teamB": {
-            'teamName': checkBoxTeamB.value ? teamControllerB.value.text : '',
-            'personName': checkBoxTeamB.value ? nameControllerB.value.text : '',
-            'phoneNumber':
-                checkBoxTeamB.value ? numberControllerB.value.text : '',
-            "notesTeamB": notesTeamB.value.text.isNotEmpty
-                ? notesTeamB.value.text.toString()
-                : "",
-          },
-          'slotPrice': updatedPrice,
-          'advancePayment':
-              double.parse(advancePaymentController.value.text).round().toInt(),
-          'slotStatus': slotStatus(),
-          'slotID': widget.slotID,
-          'bookingID': uniqueID,
-          'date': widget.date,
-        }).then((value) => {
-              alertUser(),
-              PageRouter.pushReplacement(
-                  context, BookingInfo(bookingID: uniqueID))
-            });
-      } on SocketException catch (e) {
-        if (mounted) {
-          Errors.flushBarInform(e.toString(), context, "Internet Connectivity");
-        }
-      } catch (e) {
-        if (mounted) {
-          Errors.flushBarInform(e.toString(), context, "Error");
-        }
-      }
-    } else {
-      try {
-        var refDetails = await _server
-            .collection("GroundBookings")
-            .where("bookingID", isEqualTo: widget.bookingID)
-            .get();
-        await _server
-            .collection("GroundBookings")
-            .doc(refDetails.docs.first.id)
-            .update({
-          'slotTime': widget.slotTime,
-          'bookingPerson': 'Ground Owner',
-          'groundName': widget.groundName,
-          'bookingCreated': DateTime.parse(widget.date),
-          'bookedAt': DateTime.now(),
-          'isBookingCancelled': false,
-          'userID': _auth.currentUser!.uid,
-          'feesDue':
-              updatedPrice - int.parse(advancePaymentController.value.text),
-          'paymentMode': PaymentMode.type,
-          'ratingGiven': false,
-          'rating': 3.0,
-          'ratingTags': [],
-          'groundID': widget.groundID,
-          "teamA": {
-            'teamName': teamControllerA.value.text,
-            'personName': nameControllerA.value.text,
-            'phoneNumber': numberControllerA.value.text,
-            "notesTeamA": notesTeamA.value.text.isNotEmpty
-                ? notesTeamA.value.text.toString()
-                : "",
-          },
-          "teamB": {
-            'teamName': checkBoxTeamB.value ? teamControllerB.value.text : '',
-            'personName': checkBoxTeamB.value ? nameControllerB.value.text : '',
-            'phoneNumber':
-                checkBoxTeamB.value ? numberControllerB.value.text : '',
-            "notesTeamB": notesTeamB.value.text.isNotEmpty
-                ? notesTeamB.value.text.toString()
-                : "",
-          },
-          'slotPrice': updatedPrice,
-          'advancePayment':
-              double.parse(advancePaymentController.value.text).round().toInt(),
-          'slotStatus': slotStatus(),
-          'bothTeamBooked': checkBoxTeamB.value,
-          'slotID': widget.slotID,
-          'bookingID': widget.bookingID,
-          'date': widget.date,
-        }).then((value) => {
-                  PageRouter.pushReplacement(
-                      context, BookingInfo(bookingID: widget.bookingID))
-                });
-      } on SocketException catch (e) {
-        if (mounted) {
-          Errors.flushBarInform(e.toString(), context, "Internet Connectivity");
-        }
-      } catch (e) {
-        if (mounted) {
-          Errors.flushBarInform(e.toString(), context, "Error");
-        }
-      }
-    }
-  }
-
-  String slotStatus() {
-    if (checkBoxTeamB.value) {
-      return 'Booked';
-    } else {
-      return 'Half Booked';
+    try {
+      _server
+          .collection("SportistanPartners")
+          .where('groundID', isEqualTo: widget.groundID)
+          .get()
+          .then((value) => {
+                if (value.docChanges.isNotEmpty)
+                  {data = value.docChanges, _checkBalance(data)}
+              });
+    } catch (e) {
+      return;
     }
   }
 
@@ -1059,37 +1057,7 @@ class _BookASlotState extends State<BookASlot> {
     await http.post(Uri.parse(url));
   }
 
-  Future<void> showLoading() async {
-    showModalBottomSheet(
-      isDismissible: false,
-      isScrollControlled: false,
-      enableDrag: false,
-      context: context,
-      builder: (ctx) {
-        return FractionallySizedBox(
-          heightFactor: 0.60,
-          child: Column(
-            children: [
-              Text(
-                "Booking is Creating",
-                style: TextStyle(
-                    fontFamily: "DMSans",
-                    fontWeight: FontWeight.bold,
-                    fontSize: MediaQuery.of(context).size.height / 40),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: CircularProgressIndicator(
-                    strokeWidth: 1, color: Colors.green),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> alertUser() async {
+  Future<void> alertUser({required String bookingID}) async {
     if (updateSmsAlert) {
       if (numberControllerA.value.text.isNotEmpty) {
         await sendSms(number: numberControllerA.value.text);
@@ -1101,6 +1069,326 @@ class _BookASlotState extends State<BookASlot> {
       }
     }
     updateSmsAlert = true;
+    moveToReceipt(bookingID: bookingID);
+  }
+
+  num calculateSlotPriceTeamA() {
+    if (checkBoxTeamB.value) {
+      return updatedPrice;
+    }
+    return updatedPrice / 2;
+  }
+
+  moveToReceipt({required String bookingID}) async {
+    PageRouter.pushReplacement(context, BookingInfo(bookingID: bookingID));
+  }
+
+  Future<void> checkKYC() async {
+    QuerySnapshot<Map<String, dynamic>> data;
+    await _server
+        .collection('SportistanPartners')
+        .where("groundID", isEqualTo: widget.groundID)
+        .get()
+        .then((value) => {data = value, showKYCErrorIfExist(data)});
+  }
+
+  showKYCErrorIfExist(QuerySnapshot<Map<String, dynamic>> data) {
+    if (!data.docChanges.first.doc.get("isVerified")) {
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (ctx) {
+          return Platform.isIOS
+              ? CupertinoAlertDialog(
+                  title: const Text("KYC is Pending",
+                      style: TextStyle(color: Colors.orange)),
+                  content: const Text(
+                      "KYC is UnderReview Please Check Status in Profile > My Grounds or Contact Customer Support"),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context);
+                        },
+                        child: const Text("OK"))
+                  ],
+                )
+              : AlertDialog(
+                  title: const Text("KYC is Pending",
+                      style: TextStyle(color: Colors.orange)),
+                  content: Text(
+                      "Your ${widget.groundName} KYC is Under Review Please Check Status in Profile > Verified Grounds or Contact Helpdesk"),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context);
+                        },
+                        child: const Text("OK"))
+                  ],
+                );
+        },
+      );
+    }
+  }
+
+  Future<void> _checkBalance(
+      List<DocumentChange<Map<String, dynamic>>> data) async {
+    double commissionCharge;
+    num balance = data.first.doc.get("sportistanCredit");
+    num sportistanCredit = balance;
+    num commission = data.first.doc.get("commission");
+    double result = double.parse(priceController.value.text.trim()) / 100;
+    if (alreadyCommissionCharged) {
+      double newCommissionCharge = result * commission.toInt();
+      commissionCharge = newCommissionCharge / 2;
+    } else {
+      commissionCharge = result * commission.toInt();
+
+    }
+
+    if (commissionCharge <= balance) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Creating"),
+        duration: Duration(seconds: 1),
+      ));
+      if (widget.bookingID.isEmpty) {
+        String uniqueID = UniqueID.generateRandomString();
+        try {
+          await _server.collection("GroundBookings").add({
+            'slotTime': widget.slotTime,
+            'bookingPerson': 'Ground Owner',
+            'groundName': widget.groundName,
+            'bookingCreated': DateTime.parse(widget.date),
+            'bookedAt': DateTime.now(),
+            'userID': _auth.currentUser!.uid,
+            'group': widget.group,
+            'isBookingCancelled': false,
+            'entireDayBooking': false,
+            'bookingCommissionCharged': commissionCharge,
+            'entireDayBookingID': [],
+            'feesDue': calculateFeesDue(),
+            'paymentMode': PaymentMode.type,
+            'ratingGiven': false,
+            'rating': 3.0,
+            'bothTeamBooked': checkBoxTeamB.value,
+            'groundID': widget.groundID,
+            "teamA": {
+              'teamName': teamControllerA.value.text,
+              'personName': nameControllerA.value.text,
+              'phoneNumber': numberControllerA.value.text,
+              "notesTeamA": notesTeamA.value.text.isNotEmpty
+                  ? notesTeamA.value.text.toString()
+                  : "",
+            },
+            "teamB": {
+              'teamName': checkBoxTeamB.value ? teamControllerB.value.text : '',
+              'personName':
+                  checkBoxTeamB.value ? nameControllerB.value.text : '',
+              'phoneNumber':
+                  checkBoxTeamB.value ? numberControllerB.value.text : '',
+              "notesTeamB": notesTeamB.value.text.isNotEmpty
+                  ? notesTeamB.value.text.toString()
+                  : "",
+            },
+            'totalSlotPrice': updatedPrice,
+            'slotPrice': int.parse(priceController.value.text.toString()),
+            'advancePayment': checkBoxTeamB.value
+                ? double.parse(advancePaymentController.value.text)
+                        .round()
+                        .toInt() +
+                    double.parse(advancePaymentControllerTeamB.value.text)
+                        .round()
+                        .toInt()
+                : double.parse(advancePaymentController.value.text)
+                    .round()
+                    .toInt(),
+            'slotStatus': slotStatus(),
+            'slotID': widget.slotID,
+            'bookingID': uniqueID,
+            'date': widget.date,
+          }).then((value) => {alertUser(bookingID: uniqueID)});
+        } on SocketException catch (e) {
+          if (mounted) {
+            Errors.flushBarInform(
+                e.toString(), context, "Internet Connectivity");
+          }
+        } catch (e) {
+          if (mounted) {
+            Errors.flushBarInform(e.toString(), context, "Error");
+          }
+        }
+      } else {
+        try {
+          var refDetails = await _server
+              .collection("GroundBookings")
+              .where("bookingID", isEqualTo: widget.bookingID)
+              .get();
+          await _server
+              .collection("GroundBookings")
+              .doc(refDetails.docs.first.id)
+              .update({
+            'slotTime': widget.slotTime,
+            'bookingPerson': 'Ground Owner',
+            'groundName': widget.groundName,
+            'bookingCreated': DateTime.parse(widget.date),
+            'bookedAt': DateTime.now(),
+            'isBookingCancelled': false,
+            'userID': _auth.currentUser!.uid,
+            'bookingCommissionCharged': commissionCharge,
+            'feesDue': calculateFeesDue(),
+            'paymentMode': PaymentMode.type,
+            'ratingGiven': false,
+            'rating': 3.0,
+            'ratingTags': [],
+            'groundID': widget.groundID,
+            "teamA": {
+              'teamName': teamControllerA.value.text,
+              'personName': nameControllerA.value.text,
+              'phoneNumber': numberControllerA.value.text,
+              "notesTeamA": notesTeamA.value.text.isNotEmpty
+                  ? notesTeamA.value.text.toString()
+                  : "",
+            },
+            "teamB": {
+              'teamName': checkBoxTeamB.value ? teamControllerB.value.text : '',
+              'personName':
+                  checkBoxTeamB.value ? nameControllerB.value.text : '',
+              'phoneNumber':
+                  checkBoxTeamB.value ? numberControllerB.value.text : '',
+              "notesTeamB": notesTeamB.value.text.isNotEmpty
+                  ? notesTeamB.value.text.toString()
+                  : "",
+            },
+            'slotPrice': int.parse(priceController.value.text.toString()),
+            'totalSlotPrice': updatedPrice,
+            'advancePayment': checkBoxTeamB.value
+                ? double.parse(advancePaymentController.value.text)
+                        .round()
+                        .toInt() +
+                    double.parse(advancePaymentControllerTeamB.value.text)
+                        .round()
+                        .toInt()
+                : double.parse(advancePaymentController.value.text)
+                    .round()
+                    .toInt(),
+            'slotStatus': slotStatus(),
+            'bothTeamBooked': checkBoxTeamB.value,
+            'slotID': widget.slotID,
+            'bookingID': widget.bookingID,
+            'date': widget.date,
+          }).then((value) async => {
+                    await _server
+                        .collection("SportistanPartners")
+                        .doc(data.first.doc.id)
+                        .update({
+                      'sportistanCredit': sportistanCredit - commissionCharge
+                    }).then((value) async => {
+                      await _server
+                          .collection("SportistanPartners")
+                          .doc(data.first.doc.id)
+                          .update({
+                        'sportistanCredit': sportistanCredit - commissionCharge
+                      }).then((value) => {
+                      alertUser(bookingID: widget.bookingID)})
+
+                      })
+                  });
+        } on SocketException catch (e) {
+          if (mounted) {
+            Errors.flushBarInform(
+                e.toString(), context, "Internet Connectivity");
+          }
+        } catch (e) {
+          if (mounted) {
+            Errors.flushBarInform(e.toString(), context, "Error");
+          }
+        }
+      }
+    } else {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  "Low Balance",
+                  style: TextStyle(
+                      fontFamily: "DMSans", fontSize: 22, color: Colors.red),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  "Not Able to create booking due to low balance Balance",
+                  style: TextStyle(fontFamily: "DMSans", fontSize: 16),
+                ),
+              ),
+              Card(
+                  child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  widget.groundName,
+                  softWrap: true,
+                  style: const TextStyle(fontFamily: "DMSans", fontSize: 16),
+                ),
+              )),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Rs.',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  Text(
+                    balance.toString(),
+                    style:
+                        const TextStyle(fontSize: 50, color: Colors.redAccent),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  "Our commitment to assist you better we are charging ${commission.toString()}% commission from you which is Rs.${commissionCharge.toString()} Please add credits to continue booking services on Sportistan",
+                  style: const TextStyle(
+                      fontSize: 22,
+                      color: Colors.black54,
+                      fontFamily: "Nunito"),
+                ),
+              ),
+              CupertinoButton(
+                  color: Colors.green,
+                  child: const Text("Add Credits"),
+                  onPressed: () {
+                    PageRouter.push(context, const SportistanCredit());
+                  })
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  String slotStatus() {
+    if (checkBoxTeamB.value) {
+      return 'Booked';
+    } else {
+      return 'Half Booked';
+    }
+  }
+
+  int calculateFeesDue() {
+    if (checkBoxTeamB.value) {
+      int newBalance = int.parse(advancePaymentController.value.text.trim()) +
+          int.parse(advancePaymentControllerTeamB.value.text.trim());
+      return int.parse(priceController.value.text.trim()) - newBalance;
+    }
+    return int.parse(priceController.value.text.trim()) -
+        int.parse(advancePaymentController.value.text.trim());
   }
 }
 

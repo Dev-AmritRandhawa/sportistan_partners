@@ -14,8 +14,6 @@ import 'package:sportistan_partners/utils/register_data_class.dart';
 class GroundPhotos extends StatefulWidget {
   const GroundPhotos({super.key});
 
-
-
   @override
   State<GroundPhotos> createState() => _GroundPhotosState();
 }
@@ -32,9 +30,16 @@ class _GroundPhotosState extends State<GroundPhotos>
     'Warm Up Area',
     'Washroom',
     'Coaching Available',
+    'Ball Boy',
+    'Sitting Area',
+    'Drinking Water',
+    'Locker Room',
   ];
 
   var currentPage = 0;
+
+  var otherService = TextEditingController();
+  GlobalKey<FormState> otherServiceKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -44,10 +49,9 @@ class _GroundPhotosState extends State<GroundPhotos>
 
   @override
   void initState() {
-  _controller = AnimationController(vsync: this);
+    _controller = AnimationController(vsync: this);
     super.initState();
   }
-
 
   TextEditingController nameController = TextEditingController();
   TextEditingController groundController = TextEditingController();
@@ -113,15 +117,18 @@ class _GroundPhotosState extends State<GroundPhotos>
                       itemBuilder: (context, index) {
                         return RegisterDataClass.groundImages.isNotEmpty
                             ? ListTile(
-                                title: Text(RegisterDataClass.groundImages[index].name.toString()),
+                                title: Text(RegisterDataClass
+                                    .groundImages[index].name
+                                    .toString()),
                                 leading: SizedBox(
                                     height:
                                         MediaQuery.of(context).size.height / 25,
-                                    child:
-                                        Image.file(File(RegisterDataClass.groundImages[index].path))),
+                                    child: Image.file(File(RegisterDataClass
+                                        .groundImages[index].path))),
                                 onTap: () async {
                                   setState(() {
-                                    RegisterDataClass.groundImages.removeAt(index);
+                                    RegisterDataClass.groundImages
+                                        .removeAt(index);
                                   });
                                 },
                                 trailing: const Icon(Icons.delete_forever,
@@ -166,6 +173,53 @@ class _GroundPhotosState extends State<GroundPhotos>
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Form(
+                  key: otherServiceKey,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width / 1.2,
+                    child: TextFormField(
+                      validator: (v) {
+                        if (v!.isEmpty) {
+                          return "Empty Field";
+                        } else {
+                          return null;
+                        }
+                      },
+                      controller: otherService,
+                      decoration: const InputDecoration(
+                          fillColor: Colors.white,
+                          hintText: "Add Other Services if Available",
+                          border: InputBorder.none,
+                          errorStyle: TextStyle(color: Colors.red),
+                          filled: true,
+                          labelStyle: TextStyle(color: Colors.black)),
+                    ),
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                  onPressed: () {
+                    if(otherServiceKey.currentState!.validate()){
+                      if (!serviceOptions.contains(otherService.value.text)) {
+                        serviceTags.add(otherService.value.text);
+                        serviceOptions.add(otherService.value.text);
+                        setState(() {});
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("Already Added"),
+                          duration: Duration(seconds: 1),
+                        ));
+                      }
+                    }
+
+                  },
+                  color: Colors.indigoAccent,
+                  child: const Text(
+                    "Add",
+                    style: TextStyle(color: Colors.white),
+                  )),
               RegisterDataClass.groundImages.isNotEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -173,7 +227,8 @@ class _GroundPhotosState extends State<GroundPhotos>
                           color: Colors.green,
                           onPressed: () async {
                             RegisterDataClass.groundServices = serviceTags;
-                            PageRouter.push(context, const GroundDetailsRegister());
+                            PageRouter.push(
+                                context, const GroundDetailsRegister());
                           },
                           child: const Text(
                             "Next Step",
@@ -191,18 +246,12 @@ class _GroundPhotosState extends State<GroundPhotos>
     );
   }
 
-
   uploadImages() async {
     final ImagePicker picker = ImagePicker();
-    RegisterDataClass.groundImages = await picker.pickMultiImage(imageQuality: 50);
+    RegisterDataClass.groundImages =
+        await picker.pickMultiImage(imageQuality: 50);
     if (RegisterDataClass.groundImages.isNotEmpty) {
       setState(() {});
     }
   }
-
-
-
-
-
-
 }
