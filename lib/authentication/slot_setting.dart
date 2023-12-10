@@ -42,7 +42,7 @@ class SlotSettingsState extends State<SlotSettings> {
   }
 
   setGroundID() async {
-   String id = UniqueID.generateRandomString();
+    String id = UniqueID.generateRandomString();
     SharedPreferences preferences = await SharedPreferences.getInstance();
     preferences.setString('groundID', id);
   }

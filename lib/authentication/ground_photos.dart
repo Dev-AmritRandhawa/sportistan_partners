@@ -217,7 +217,7 @@ class _GroundPhotosState extends State<GroundPhotos>
                   },
                   color: Colors.indigoAccent,
                   child: const Text(
-                    "Add",
+                    "Add More Services",
                     style: TextStyle(color: Colors.white),
                   )),
               RegisterDataClass.groundImages.isNotEmpty

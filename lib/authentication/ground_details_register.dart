@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:chips_choice/chips_choice.dart';
 import 'package:delayed_display/delayed_display.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:sportistan_partners/authentication/slot_setting.dart';
@@ -91,9 +90,7 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     style: const TextStyle(color: Colors.black87),
                     controller: nameController,
                     keyboardType: TextInputType.name,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z]")),
-                    ],
+
                     decoration: InputDecoration(
                         errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Owner Name as Per Documents",

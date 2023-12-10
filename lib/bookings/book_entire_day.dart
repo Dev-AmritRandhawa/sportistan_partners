@@ -27,6 +27,7 @@ class BookEntireDay extends StatefulWidget {
       {super.key,
       required this.date,
       required this.groundID,
+
       required this.groundName});
 
   @override
@@ -92,7 +93,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
                                 TextStyle(fontSize: 16, fontFamily: "DMSans")),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('Rs.$entireDayAmount',
+                          child: Text('Rs.${entireDayAmount.toString()}',
                               style: const TextStyle(fontSize: 24)),
                         ),
                         dataList()
@@ -158,7 +159,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
                                       side: const BorderSide(
                                           color: Colors.green, width: 2),
                                     ),
-                                    onPressed: () {},
+                                    onPressed: null,
                                     child: Text(
                                       bookings.slotTime,
                                       style: TextStyle(
@@ -307,11 +308,9 @@ class _BookEntireDayState extends State<BookEntireDay> {
                                     context,
                                     "Error");
                                 return "Enter Advance";
-                              } else if (double.parse(
-                                          advancePaymentController.value.text)
-                                      .round()
-                                      .toInt() >
-                                  entireDayAmount) {
+                              } else if (int.parse(
+                                      advancePaymentController.value.text) >
+                                  double.parse(entireDayAmount!).toDouble().round().toInt()) {
                                 return "Invalid Amount";
                               } else {
                                 return null;
@@ -414,18 +413,21 @@ class _BookEntireDayState extends State<BookEntireDay> {
   }
 
   List allData = [];
-  dynamic entireDayAmount;
+   String? entireDayAmount;
   late num commission;
 
   Future<void> _checkBalance(
       List<DocumentChange<Map<String, dynamic>>> data) async {
     num balance = data.first.doc.get("sportistanCredit");
     num commission = data.first.doc.get("commission");
-    double result = entireDayAmount / 100;
+    String groundType = data.first.doc.get("groundType");
+    double result = double.parse(entireDayAmount!).toDouble().toInt().round() / 100;
     double commissionCharge = result * commission.toInt();
-
     if (commissionCharge <= balance) {
-      createBooking(commissionCharge, balance);
+      createBooking(
+          balance: balance,
+          commissionCharge: commissionCharge,
+          keepBalance: balance, groundType: groundType);
     } else {
       showModalBottomSheet(
         context: context,
@@ -445,7 +447,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Text(
-                    "Not Able to create booking due to low balance Balance",
+                    "Not Able to create booking due to low balance",
                     style: TextStyle(fontFamily: "DMSans", fontSize: 16),
                   ),
                 ),
@@ -561,7 +563,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
                       title: const Text("KYC is Pending",
                           style: TextStyle(color: Colors.orange)),
                       content: Text(
-                          "Your ${widget.groundName} KYC is Under Review Please Check Status in Profile > Verified Grounds or Contact Helpdesk"),
+                          "Your ${widget.groundName} KYC is Under Review Please Check Status in Profile > My Grounds or Contact Helpdesk"),
                       actions: [
                         TextButton(
                             onPressed: () {
@@ -593,9 +595,13 @@ class _BookEntireDayState extends State<BookEntireDay> {
       });
       if (_phoneContact!.phoneNumber != null) {
         if (_phoneContact!.phoneNumber!.number!.length > 10) {
-          controller.text = _phoneContact!.phoneNumber!.number!.substring(3);
+          controller.text = _phoneContact!.phoneNumber!.number!
+              .substring(3)
+              .split(" ")
+              .join("");
         } else {
-          controller.text = _phoneContact!.phoneNumber!.number!;
+          controller.text =
+              _phoneContact!.phoneNumber!.number!.split(" ").join("");
         }
       }
     } else {
@@ -608,12 +614,17 @@ class _BookEntireDayState extends State<BookEntireDay> {
     checkPermissionForContacts(controller);
   }
 
-  Future<void> createBooking(double commissionCharge, num balance) async {
+  String groupID = UniqueID.generateRandomString();
+
+  Future<void> createBooking(
+      {required double commissionCharge,
+      required num balance,
+      required String groundType,
+      required num keepBalance}) async {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
       content: Text("Booking is creating"),
       backgroundColor: Colors.green,
     ));
-    String groupID = UniqueID.generateRandomString();
 
     for (int i = 0; i < allData.length; i++) {
       bookingID.add(UniqueID.generateRandomString());
@@ -627,13 +638,14 @@ class _BookEntireDayState extends State<BookEntireDay> {
         'bookedAt': DateTime.now(),
         'userID': _auth.currentUser!.uid,
         'group': widget.date,
+        'groundType' : groundType,
         'isBookingCancelled': false,
         'entireDayBooking': true,
         'groupID': groupID,
         'bookingCommissionCharged': commissionCharge,
         'entireDayBookingID': bookingID,
         'includeSlots': includeSlots,
-        'feesDue': entireDayAmount -
+        'feesDue': double.parse(entireDayAmount!).toDouble().round().toInt() -
             int.parse(advancePaymentController.value.text.trim().toString()),
         'ratingGiven': false,
         'rating': 3.0,
@@ -655,26 +667,25 @@ class _BookEntireDayState extends State<BookEntireDay> {
           'phoneNumber': numberControllerA.value.text,
           "notesTeamB": notesTeamA.value.text.toString(),
         },
-        'slotPrice': entireDayAmount,
+        'slotPrice': double.parse(entireDayAmount!).toDouble().round().toInt(),
         'slotStatus': "Booked",
         'slotTime': allData[j]["time"],
         'slotID': allData[j]["slotID"],
         'bookingID': bookingID[j],
         'date': widget.date,
-      }).then((value) async => {
-            await _server
-                .collection("SportistanPartners")
-                .doc(data.first.doc.id)
-                .update({'sportistanCredit': balance - commission}).then(
-                    (value) => {
-                          if (mounted)
-                            {
-                              PageRouter.pushReplacement(context,
-                                  BookingEntireDayInfo(bookingID: bookingID[j]))
-                            }
-                        }),
-          });
+      });
     }
+    await _server
+        .collection("SportistanPartners")
+        .doc(data.first.doc.id)
+        .update({'sportistanCredit': keepBalance - commissionCharge}).then(
+            (value) => {
+                  if (mounted)
+                    {
+                      PageRouter.pushReplacement(context,
+                          BookingEntireDayInfo(bookingID: bookingID[0]))
+                    }
+                });
   }
 }
 

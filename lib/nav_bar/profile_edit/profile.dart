@@ -11,7 +11,6 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pinput/pinput.dart';
-import 'package:share/share.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:sportistan_partners/authentication/location_permission.dart';
 import 'package:sportistan_partners/authentication/phone_authentication.dart';
@@ -24,7 +23,7 @@ import 'package:sportistan_partners/nav_bar/profile_edit/verified_grounds.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'dart:async';
-
+import 'package:share_plus/share_plus.dart';
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
@@ -50,7 +49,7 @@ class _ProfileState extends State<Profile> {
 
   GoogleSignInAccount? currentUser;
   bool isAuthorized = true;
-  String profileLink = '';
+  String? profileLink;
   GoogleSignIn googleSignIn = GoogleSignIn(
       serverClientId:
           '497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com');
@@ -120,8 +119,33 @@ class _ProfileState extends State<Profile> {
                           valueListenable: imageListener,
                           builder: (context, value, child) {
                             return value
-                                ? profileLink.isNotEmpty
-                                    ? Image.network(profileLink)
+
+                                    ? Stack(
+                                        alignment: Alignment.bottomRight,
+                                        children: [
+                                          InkWell(
+                                            onTap: (){
+                                              PageRouter.push(context,
+                                                  const CropImageTool())
+                                                  .then((value) => {check()});
+                                            },
+                                            child: CircleAvatar(
+                                              backgroundColor: const Color(0XFFfffbf0),
+                                              foregroundImage: NetworkImage( profileLink.toString()),
+
+                                              maxRadius: MediaQuery.of(context)
+                                                      .size
+                                                      .height /
+                                                  12,
+                                            ),
+                                          ),
+                                          const CircleAvatar(
+                                            child: Icon(
+                                              Icons.camera_alt_rounded,
+                                            ),
+                                          ),
+                                        ],
+                                      )
                                     : Stack(
                                         alignment: Alignment.bottomRight,
                                         children: [
@@ -147,10 +171,7 @@ class _ProfileState extends State<Profile> {
                                             Icons.camera_alt_rounded,
                                           )
                                         ],
-                                      )
-                                : const CircularProgressIndicator(
-                                    strokeWidth: 1,
-                                  );
+                            );
                           },
                         )
                       ],
@@ -214,7 +235,7 @@ class _ProfileState extends State<Profile> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Add Sportistan Credit",
+                                Text("My Sportistan Credit",
                                     style: TextStyle(
                                         fontFamily: "DMSans",
                                         fontSize:
@@ -496,7 +517,11 @@ class _ProfileState extends State<Profile> {
                                         style: TextStyle(fontFamily: "DMSans")),
                                     actions: [
                                       TextButton(
-                                          onPressed: () {},
+                                          onPressed: () async {
+                                            Navigator.pop(ctx);
+                                            finalOTPController.clear();
+                                            showPopupToVerifyDeletion();
+                                          },
                                           child: const Text(
                                             "Delete",
                                             style: TextStyle(color: Colors.red),
@@ -1099,12 +1124,16 @@ class _ProfileState extends State<Profile> {
           .where("userID", isEqualTo: _auth.currentUser!.uid)
           .get()
           .then((value) => {
-                profileLink = value.docs.last.get("profileImageLink"),
+            if(value.docChanges.isNotEmpty){
+                profileLink = value.docs.last.get("profileImageLinks"),
                 imageListener.value = true
+            }else{
+                imageListener.value = false
+
+            }
               });
     } catch (e) {
       if (mounted) {
-        profileLink = '';
         imageListener.value = true;
       }
     }
@@ -1193,6 +1222,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> deleteUserAccount() async {
+    await _auth.currentUser?.delete();
     await _auth.signOut().then((value) =>
         {PageRouter.pushRemoveUntil(context, const PhoneAuthentication())});
   }

@@ -7,7 +7,7 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'package:sportistan_partners/utils/send_cloud_message.dart';
@@ -52,6 +52,8 @@ class _BookingInfoState extends State<BookingInfo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white,foregroundColor: Colors.black),
+
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -73,7 +75,7 @@ class _BookingInfoState extends State<BookingInfo> {
                       refDetails = doc.id;
                       userID = doc['userID'];
                       groundName = doc['groundName'];
-                      slotTime = doc['time'];
+                      slotTime = doc['slotTime'];
 
                       Timestamp time = doc['bookedAt'];
 
@@ -152,6 +154,7 @@ class _BookingInfoState extends State<BookingInfo> {
                                     ],
                                   ),
                                   Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
                                         "Slot : ",
@@ -640,6 +643,7 @@ class _BookingInfoState extends State<BookingInfo> {
   }) async {
     num sportistanCredit;
     try {
+    await  sendNotification();
       await _server
           .collection("SportistanPartners")
           .where("userID", isEqualTo: userID)
@@ -697,7 +701,7 @@ class _BookingInfoState extends State<BookingInfo> {
     final token = snapshot.docs[0].get("token");
 
     FirebaseCloudMessaging.sendPushMessage(
-        "$groundName Booking is Cancelled of Slot $slotTime $date",
+        "$groundName Booking is Cancelled of Slot $slotTime and $date",
         "Booking Cancelled",
         token);
     if (mounted) {

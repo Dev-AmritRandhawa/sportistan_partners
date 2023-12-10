@@ -38,8 +38,7 @@ class _OnBoardState extends State<OnBoard> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
-    return MaterialApp(
-      home: Scaffold(
+    return  Scaffold(
         bottomSheet: _currentPage != slideList.length - 1
             ? Padding(
                 padding:
@@ -74,7 +73,7 @@ class _OnBoardState extends State<OnBoard> {
                         color: Colors.indigo,
                         child: Text(
 
-                          "Let's Register",
+                          "Let's Start",
                           style: TextStyle(
                           letterSpacing: 1.0,
                               color: Colors.white,
@@ -109,7 +108,7 @@ class _OnBoardState extends State<OnBoard> {
             ),
           ],
         ),
-      ),
+
     );
   }
 

@@ -76,7 +76,7 @@ class _HomeState extends State<Home> {
       'userID': _auth.currentUser?.uid.toString(),
       'groundID': groundID[groundIndex].toString(),
     });
-    collectBookings(index: 0);
+    collectBookings(index: groundIndex);
   }
 
   Future<void> _futureGroundTypes() async {
@@ -88,6 +88,7 @@ class _HomeState extends State<Home> {
     _server
         .collection("SportistanPartners")
         .where("userID", isEqualTo: _auth.currentUser!.uid)
+        .where('phoneNumber', isEqualTo: _auth.currentUser!.phoneNumber)
         .get()
         .then((value) => {
               if (value.docChanges.isNotEmpty)
@@ -102,7 +103,7 @@ class _HomeState extends State<Home> {
                         value.docs[i]["locationName"],
                       ),
                     },
-                  dropDownValue = dropDownList[0],
+                  dropDownValue = dropDownList[groundIndex],
                   collectToken()
                 }
               else
@@ -129,6 +130,7 @@ class _HomeState extends State<Home> {
         listShow = false;
       });
     }
+    alreadyBooked.clear();
     filter.value = false;
     bookingElements.clear();
     bookingList.clear();
@@ -141,8 +143,10 @@ class _HomeState extends State<Home> {
       await _server
           .collection("GroundBookings")
           .where("bookingCreated",
-              isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
-                  .add(const Duration(days: 30)))
+          isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
+              .add(const Duration(days: 30)))
+          .where('bookingCreated',
+          isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day))
           .where('userID', isEqualTo: _auth.currentUser!.uid)
           .where('groundID', isEqualTo: groundID[index])
           .where("isBookingCancelled", isEqualTo: false)
@@ -176,8 +180,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
+    return  Scaffold(
           body: SlidingUpPanel(
         borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(30), topRight: Radius.circular(30)),
@@ -233,9 +236,9 @@ class _HomeState extends State<Home> {
                                   if (dropDownValue != newValue) {
                                     dropDownValue = newValue!;
                                     switchGrounds.value = true;
-                                    collectBookings(
-                                        index: dropDownList
-                                            .indexOf(dropDownValue!));
+                                    groundIndex =
+                                        dropDownList.indexOf(dropDownValue!);
+                                    _futureGroundTypes();
                                   }
                                 },
                               ),
@@ -356,7 +359,7 @@ class _HomeState extends State<Home> {
               ],
             ),
           ),
-        ),
+
       )), //Scaffold
     );
   }
@@ -464,7 +467,8 @@ class _HomeState extends State<Home> {
             slotTime: bookingElements[bookingCreated]["slotTime"],
             slotPrice: bookingElements[bookingCreated]["slotPrice"],
             feesDue: bookingElements[bookingCreated]["feesDue"],
-            entireDayBooked: bookingElements[bookingCreated]["entireDayBooking"],
+            entireDayBooked: bookingElements[bookingCreated]
+                ["entireDayBooking"],
           ));
           alreadyBooked.remove(slotsElements[DateFormat.EEEE().format(date)][j]
                   ["slotID"] +
@@ -672,7 +676,11 @@ class _HomeState extends State<Home> {
                                               ),
                                               onPressed: () {
                                                 if (bookings.entireDayBooked) {
-                                                  PageRouter.push(context, BookingEntireDayInfo(bookingID: bookings.bookingID));
+                                                  PageRouter.push(
+                                                      context,
+                                                      BookingEntireDayInfo(
+                                                          bookingID: bookings
+                                                              .bookingID));
                                                 } else {
                                                   checkStatusSlotAndMove(
                                                       bookings: bookings);
@@ -765,31 +773,30 @@ class _HomeState extends State<Home> {
                                                           ),
                                                         ],
                                                       )
-                                                    : bookings.feesDue > 0
-                                                        ? Row(
+                                                    : bookings.feesDue != 0
+                                                ? Row(
                                                             children: [
                                                               Text(
-                                                                "Fees Due :",
+                                                               bookings.entireDayBooked ? 'Fees Due of Entire Day ' : "Fees Due :",
                                                                 style: TextStyle(
                                                                     fontSize: MediaQuery.of(context)
                                                                             .size
                                                                             .width /
                                                                         38,
-                                                                    color: Colors
+                                                                    color: bookings.entireDayBooked ? Colors.red : Colors
                                                                             .red[
                                                                         200],
                                                                     fontFamily:
                                                                         "DMSans"),
                                                               ),
                                                               Text(
-                                                                bookings.feesDue
-                                                                    .toString(),
+                                                               'Rs. ${bookings.feesDue}',
                                                                 style: TextStyle(
                                                                     fontSize: MediaQuery.of(context)
                                                                             .size
                                                                             .width /
                                                                         38,
-                                                                    color: Colors
+                                                                    color: bookings.entireDayBooked ? Colors.red : Colors
                                                                             .red[
                                                                         200],
                                                                     fontFamily:
@@ -798,22 +805,22 @@ class _HomeState extends State<Home> {
                                                             ],
                                                           )
                                                         : Text(
-                                                            "No Due",
-                                                            style: TextStyle(
-                                                                fontSize: MediaQuery
-                                                                            .of(
-                                                                                context)
-                                                                        .size
-                                                                        .width /
-                                                                    38,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Colors
-                                                                    .green,
-                                                                fontFamily:
-                                                                    "DMSans"),
-                                                          ),
+                                              "No Due",
+                                              style: TextStyle(
+                                                  fontSize: MediaQuery
+                                                      .of(
+                                                      context)
+                                                      .size
+                                                      .width /
+                                                      38,
+                                                  fontWeight:
+                                                  FontWeight
+                                                      .bold,
+                                                  color: Colors
+                                                      .green,
+                                                  fontFamily:
+                                                  "DMSans"),
+                                            ),
                                           ],
                                         ));
                                   }),
@@ -980,24 +987,23 @@ class _HomeState extends State<Home> {
     await _server
         .collection("GroundBookings")
         .where("bookingCreated",
-        isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
-            .add(const Duration(days: 30)))
-
+            isLessThanOrEqualTo: DateTime(now.year, now.month, now.day)
+                .add(const Duration(days: 30)))
         .get()
         .then((value) => {
-      bookingElements = value.docs,
-      if (value.docs.isNotEmpty)
-        {
-          for (int i = 0; i < bookingElements.length; i++)
-            {
-              bookingList.add(bookingElements[i]["slotID"] +
-                  bookingElements[i]["date"])
-            },
-          getFilterSlots(now)
-        }
-      else
-        {getFilterSlots(now)},
-    });
+              bookingElements = value.docs,
+              if (value.docs.isNotEmpty)
+                {
+                  for (int i = 0; i < bookingElements.length; i++)
+                    {
+                      bookingList.add(bookingElements[i]["slotID"] +
+                          bookingElements[i]["date"])
+                    },
+                  getFilterSlots(now)
+                }
+              else
+                {getFilterSlots(now)},
+            });
   }
 
   getFilterSlots(DateTime date) async {
@@ -1039,7 +1045,8 @@ class _HomeState extends State<Home> {
               slotStatus: bookingElements[l]["slotStatus"],
               slotTime: bookingElements[l]["slotTime"],
               slotPrice: bookingElements[l]["slotPrice"],
-              feesDue: bookingElements[l]["feesDue"], entireDayBooked: false,
+              feesDue: bookingElements[l]["feesDue"],
+              entireDayBooked: false,
             ));
           }
         } else {
@@ -1060,7 +1067,7 @@ class _HomeState extends State<Home> {
     }
     for (int j = 0; j < daySlots.length; j++) {
       String uniqueID = slotsElements[DateFormat.EEEE().format(date)][j]
-      ["slotID"] +
+              ["slotID"] +
           date.toString();
       if (alreadyBooked.isNotEmpty) {
         if (alreadyBooked.contains(uniqueID)) {
@@ -1072,50 +1079,47 @@ class _HomeState extends State<Home> {
         createAvailableFilterSlots(date: date, j: j);
       }
     }
-
   }
 
   void createAvailableFilterSlots({required DateTime date, required int j}) {
-
-          if (alreadyBooked.contains(slotsElements[DateFormat.EEEE().format(date)]
-          [j]["slotID"] +
-              date.toString())) {
-            finalAvailabilityList.add(MyBookings(
-              slotID: bookingElements[bookingCreated]["slotID"],
-              group: date.toString(),
-              date: bookingElements[bookingCreated]["date"],
-              bookingID: bookingElements[bookingCreated]["bookingID"],
-              slotStatus: bookingElements[bookingCreated]["slotStatus"],
-              slotTime: bookingElements[bookingCreated]["slotTime"],
-              slotPrice: bookingElements[bookingCreated]["slotPrice"],
-              feesDue: bookingElements[bookingCreated]["feesDue"],
-              entireDayBooked: bookingElements[bookingCreated]["entireDayBooking"],
-            ));
-            alreadyBooked.remove(slotsElements[DateFormat.EEEE().format(date)][j]
+    if (alreadyBooked.contains(slotsElements[DateFormat.EEEE().format(date)][j]
             ["slotID"] +
-                date.toString());
+        date.toString())) {
+      finalAvailabilityList.add(MyBookings(
+        slotID: bookingElements[bookingCreated]["slotID"],
+        group: date.toString(),
+        date: bookingElements[bookingCreated]["date"],
+        bookingID: bookingElements[bookingCreated]["bookingID"],
+        slotStatus: bookingElements[bookingCreated]["slotStatus"],
+        slotTime: bookingElements[bookingCreated]["slotTime"],
+        slotPrice: bookingElements[bookingCreated]["slotPrice"],
+        feesDue: bookingElements[bookingCreated]["feesDue"],
+        entireDayBooked: bookingElements[bookingCreated]["entireDayBooking"],
+      ));
+      alreadyBooked.remove(slotsElements[DateFormat.EEEE().format(date)][j]
+              ["slotID"] +
+          date.toString());
 
-            bookingCreated++;
-          } else {
-            finalAvailabilityList.add(MyBookings(
-              slotID: slotsElements[DateFormat.EEEE().format(date)][j]["slotID"],
-              group: date.toString(),
-              date: date.toString(),
-              bookingID: '',
-              slotStatus: 'Available',
-              slotTime: slotsElements[DateFormat.EEEE().format(date)][j]["time"],
-              slotPrice: slotsElements[DateFormat.EEEE().format(date)][j]
-              ["price"],
-              feesDue: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
-              entireDayBooked: false,
-            ));
-          }
-      if (mounted) {
-        bookingCreated = 0;
-        setState(() {
-          listShow = true;
-        });
-      }
+      bookingCreated++;
+    } else {
+      finalAvailabilityList.add(MyBookings(
+        slotID: slotsElements[DateFormat.EEEE().format(date)][j]["slotID"],
+        group: date.toString(),
+        date: date.toString(),
+        bookingID: '',
+        slotStatus: 'Available',
+        slotTime: slotsElements[DateFormat.EEEE().format(date)][j]["time"],
+        slotPrice: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
+        feesDue: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
+        entireDayBooked: false,
+      ));
+    }
+    if (mounted) {
+      bookingCreated = 0;
+      setState(() {
+        listShow = true;
+      });
+    }
   }
 }
 

@@ -38,8 +38,6 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
 
   GoogleSignInAccount? currentUser;
 
-
-
   Future<void> _launchInBrowser(Uri url) async {
     if (!await launchUrl(
       url,
@@ -63,10 +61,11 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   }
 
   GoogleSignIn googleSignIn = GoogleSignIn(
-    serverClientId: "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
+    serverClientId:
+        "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
   );
   final Uri toLaunch = Uri(
-      scheme: 'https', host: 'www.sportistan.co.in', path: 'Terms&Services');
+      scheme: 'https', host: 'www.sportistan.co.in');
 
   @override
   void dispose() {
@@ -273,10 +272,6 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                             );
                           },
                         ),
-                        const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text("Continue With Number to Register New Account",style: TextStyle(fontFamily: "DMSans",fontWeight: FontWeight.bold,color: Colors.black54,),),
-                        ),
                         ValueListenableBuilder(
                           valueListenable: loading,
                           builder: (context, value, child) {
@@ -351,6 +346,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     padding: const EdgeInsets.all(8.0),
                                     child: CupertinoButton(
                                       onPressed: () async {
+
                                         if (numberKey.currentState!
                                             .validate()) {
                                           try {
@@ -383,7 +379,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     width:
                                         MediaQuery.of(context).size.width / 2,
                                     child: OtpTimerButton(
-                                      buttonType: ButtonType.elevated_button,
+                                      buttonType: ButtonType.text_button,
                                       controller: controller,
                                       onPressed: () {
                                         requestOtp();
@@ -400,39 +396,52 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                         ),
                       ],
                     ),
-                    ValueListenableBuilder(valueListenable: signInCheck, builder: (context, value, child) {
-                      return value ? Column(
-                        children: [
-                          const CircularProgressIndicator(strokeWidth: 1,color: Colors.white),
-                          CupertinoButton(
-                               onPressed: (){
-                            signInCheck.value = false;
-                          },
-                              child: const Text("Cancel",style: TextStyle(color: Colors.white),))
-                        ],
-                      ) : CupertinoButton(
-                          color: Colors.white,
-                          onPressed: () {
-                            signInCheck.value = true;
-                            handleSignIn();
-                          },
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width / 2,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                const Text(
-                                  "Continue with Google",
-                                  style: TextStyle(
-                                      color: Colors.black, fontFamily: "DMSans"),
-                                ),
-                                Image.asset("assets/gicon.png",
-                                    height:
-                                    MediaQuery.of(context).size.height / 45)
-                              ],
-                            ),
-                          ));
-                    },),
+                    ValueListenableBuilder(
+                      valueListenable: signInCheck,
+                      builder: (context, value, child) {
+                        return value
+                            ? Column(
+                                children: [
+                                  const CircularProgressIndicator(
+                                      strokeWidth: 1, color: Colors.white),
+                                  CupertinoButton(
+                                      onPressed: () {
+                                        signInCheck.value = false;
+                                      },
+                                      child: const Text(
+                                        "Cancel",
+                                        style: TextStyle(color: Colors.white),
+                                      ))
+                                ],
+                              )
+                            : CupertinoButton(
+                                color: Colors.white,
+                                onPressed: () {
+                                  signInCheck.value = true;
+                                  handleSignIn();
+                                },
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width / 2,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      const Text(
+                                        "Continue with Google",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontFamily: "DMSans"),
+                                      ),
+                                      Image.asset("assets/gicon.png",
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height /
+                                              45)
+                                    ],
+                                  ),
+                                ));
+                      },
+                    ),
                     ValueListenableBuilder(
                       valueListenable: buttonDisable,
                       builder: (context, value, child) {
@@ -566,6 +575,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
 
   Future<void> handleSignOut() async {
     if (currentUser != null) {
+      _auth.currentUser!.delete();
       googleSignIn.disconnect();
     }
   }
@@ -611,75 +621,76 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   }
 
   Future<void> _checkUserExistence() async {
+    _server
+        .collection("SportistanPartners")
+        .where('userID', isEqualTo: _auth.currentUser!.uid)
+        .get()
+        .then((value) async => {
+              if (value.docChanges.isNotEmpty)
+                {_moveToHome()}
+              else
+                {
+                  await handleSignOut(),
 
-    CollectionReference collectionReference = _server
-        .collection("SportistanPartnersProfile")
-        .doc(_auth.currentUser!.uid)
-        .collection("Account");
-    QuerySnapshot querySnapshot = await collectionReference.get();
-    if (querySnapshot.docs.isEmpty) {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.delete();
-        await handleSignOut();
-        signInCheck.value = false;
-       if(mounted){
-         showModalBottomSheet(
-           context: context,
-           builder: (ctx) {
-             return Column(
-               mainAxisAlignment: MainAxisAlignment.spaceAround,
-               children: [
-                 const Text(
-                   "No Account Found",
-                   style: TextStyle(
-                       fontFamily: "DMSans", fontSize: 18, color: Colors.black),
-                 ),
-                 const Padding(
-                   padding: EdgeInsets.all(8.0),
-                   child: Text(
-                     "Use Phone Number to Create Account then you can login with google account using Connect with Google in profile settings",
-                     style: TextStyle(fontFamily: "DMSans"),
-                   ),
-                 ),
-                 Image.asset("assets/noResults.png"),
-                 CupertinoButton(
-                     color: Colors.green,
-                     onPressed: () {
-                       Navigator.pop(ctx);
-                     },
-                     child: const Text("OK"))
-               ],
-             );
-           },
-         );
-       }
-      }
-    } else {
-      _moveToHome();
-    }
+                  signInCheck.value = false,
+                  if (mounted)
+                    {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (ctx) {
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              const Text(
+                                "No Account Found",
+                                style: TextStyle(
+                                    fontFamily: "DMSans",
+                                    fontSize: 18,
+                                    color: Colors.black),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Use Phone Number to Create an Account Continue with Google service can use later in profile settings for faster login response",
+                                  style: TextStyle(fontFamily: "DMSans",fontSize: 18),
+                                ),
+                              ),
+                              Image.asset("assets/noResults.png"),
+                              CupertinoButton(
+                                  color: Colors.green,
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                  },
+                                  child: const Text("Continue with Number"))
+                            ],
+                          );
+                        },
+                      )
+                    }
+                }
+            });
   }
-Future<void> _checkUserExistenceWithPhone() async {
-  List<DocumentChange<Map<String, dynamic>>> data = [];
-    try{
-  await _server
-          .collection("SportistanPartners").where("userID",isEqualTo: _auth.currentUser!.uid).get().then((value) => {
-    data = value.docChanges
-      });
-      if (data.isEmpty) {
-        _moveToRegister();
-      } else {
-        _moveToHome();
-      }
-    }catch(e){
-      if(mounted){
+
+  Future<void> _checkUserExistenceWithPhone() async {
+    try {
+      await _server
+          .collection("SportistanPartners")
+          .where("userID", isEqualTo: _auth.currentUser!.uid)
+          .where('phoneNumber', isEqualTo: _auth.currentUser!.phoneNumber)
+          .get()
+          .then((value) => {
+                if (value.docChanges.isEmpty)
+                  {_moveToRegister()}
+                else
+                  {_moveToHome()}
+              });
+    } catch (e) {
+      if (mounted) {
         Errors.flushBarInform(e.toString(), context, "Error");
-      return;
+        _moveToRegister();
       }
     }
-
   }
-
-
 
   void _moveToHome() {
     PageRouter.pushRemoveUntil(context, const NavHome());
@@ -687,6 +698,5 @@ Future<void> _checkUserExistenceWithPhone() async {
 
   Future<void> _moveToRegister() async {
     PageRouter.pushRemoveUntil(context, const SearchField());
-
   }
 }

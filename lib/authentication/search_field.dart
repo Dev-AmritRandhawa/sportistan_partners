@@ -22,7 +22,6 @@ class SearchField extends StatefulWidget {
 }
 
 class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
-  final GlobalKey<FormState> searchKey = GlobalKey<FormState>();
   PanelController pc = PanelController();
   late Position position;
   List<dynamic> listData = [];
@@ -80,8 +79,11 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
           compassEnabled: false,
           myLocationEnabled: true,
           onMapCreated: (GoogleMapController controller) {
-            _controller.complete(controller);
-            pc.open();
+            if(!_controller.isCompleted){
+              _controller.complete(controller);
+              pc.open();
+            }
+
           },
         ),
         SafeArea(

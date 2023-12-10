@@ -41,9 +41,6 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
 
   int onwardsAmount = 0;
 
-  TextEditingController entireDayController = TextEditingController();
-  GlobalKey<FormState> entireDayControllerKey = GlobalKey<FormState>();
-
   @override
   void initState() {
     getSlots();
@@ -238,8 +235,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 borderRadius: const BorderRadius.all(Radius.zero),
                 color: Colors.green.shade800,
                 onPressed: () {
-                  if (formKey.currentState!.validate() &
-                      entireDayControllerKey.currentState!.validate()) {
+                  if (formKey.currentState!.validate()) {
                     ondDone();
                   }
                 },
@@ -283,49 +279,6 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                                 return Column(
                                   children: [
                                     item.values.elementAt(index),
-                                    Form(
-                                      key: entireDayControllerKey,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          validator: (input) {
-                                            if (input!.isEmpty) {
-                                              return "Price is Missing";
-                                            } else {
-                                              return null;
-                                            }
-                                          },
-                                          style: const TextStyle(
-                                              color: Colors.black87),
-                                          controller: entireDayController,
-                                          keyboardType: TextInputType.name,
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter
-                                                .digitsOnly
-                                          ],
-                                          decoration: InputDecoration(
-                                              label: const Text("Entire Day Amount"),
-
-                                              errorStyle: const TextStyle(
-                                                  color: Colors.red),
-                                              hintText:
-                                                  "Enter Entire Day Amount for ${widget.day} ?",
-                                              hintStyle: TextStyle(
-                                                  fontSize:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height /
-                                                          50,
-                                                  color: Colors.black87,
-                                                  fontFamily: "Nunito"),
-                                              fillColor: Colors.grey.shade200,
-                                              filled: true,
-                                              border: const OutlineInputBorder(
-                                                borderSide: BorderSide.none,
-                                              )),
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 );
                               }),
@@ -454,13 +407,6 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                   ))
                 })
             .then((value) async => {
-                  await _server
-                      .collection("SportistanPartners")
-                      .doc(RegisterDataClass.groundID.toString())
-                      .update({
-                    '${widget.day}EntireDay': int.parse(
-                        entireDayController.value.text.trim().toString()),
-                  }),
                   if (widget.day == "Sunday") {getKycLinks()}
                 });
       } catch (e) {
@@ -486,7 +432,6 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         nameTECs[i]?.text = data["Monday"][i]['time'];
         nameTECs2[i]?.text = data["Monday"][i]['timeEnd'];
         mailTECs[i]?.text = data["Monday"][i]['price'].toString();
-        entireDayController.text = data["MondayEntireDay"].toString();
       }
       listLoad.value = false;
     } catch (e) {
@@ -546,6 +491,9 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         'isKYCPending': true,
         'kycStatus': 'Under Review',
         'commission': 10,
+        'isBadgeAllotted' : false,
+        'badges' : [],
+        'isAccountOnHold' : false,
         'rejectReason': [],
         'phoneNumber': _auth.currentUser!.phoneNumber,
         'profileImageLink': '',
@@ -566,7 +514,8 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 RegisterDataClass.groundUrls.clear(),
                 RegisterDataClass.kycUrls.clear(),
                 RegisterDataClass.serverInit = false,
-                PageRouter.pushRemoveUntil(context, const NavHome())
+                PageRouter.pushReplacement(
+                    context, const EntireDaySlotSettings())
               });
     } catch (e) {
       if (mounted) {
@@ -612,6 +561,9 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       'locationName': '',
       'isVerified': false,
       'groundType': '',
+      'isBadgeAllotted' : false,
+      'badges' : [],
+      'isAccountOnHold' : false,
       'userID': '',
       'phoneNumber': _auth.currentUser!.phoneNumber,
       'kycStatus': 'Under Review',
@@ -645,4 +597,286 @@ class Entry {
 class DataSave {
   static bool isDataSave = false;
   static List<Entry> entries = [];
+}
+
+class EntireDaySlotSettings extends StatefulWidget {
+  const EntireDaySlotSettings({super.key});
+
+  @override
+  State<EntireDaySlotSettings> createState() => _EntireDaySlotSettingsState();
+}
+
+class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
+  TextEditingController mondayController = TextEditingController();
+  TextEditingController tuesdayController = TextEditingController();
+  TextEditingController wednesdayController = TextEditingController();
+  TextEditingController thursdayController = TextEditingController();
+  TextEditingController fridayController = TextEditingController();
+  TextEditingController saturdayController = TextEditingController();
+  TextEditingController sundayController = TextEditingController();
+  GlobalKey<FormState> mondayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> tuesdayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> wednesdayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> thursdayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> fridayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> saturdayKey = GlobalKey<FormState>();
+  GlobalKey<FormState> sundayKey = GlobalKey<FormState>();
+
+  final _server = FirebaseFirestore.instance;
+
+  @override
+  void dispose() {
+    mondayController.dispose();
+    tuesdayController.dispose();
+    wednesdayController.dispose();
+    thursdayController.dispose();
+    fridayController.dispose();
+    saturdayController.dispose();
+    sundayController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: SafeArea(
+            child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(children: [
+                  const Text("Final Step",style: TextStyle(fontFamily: "Nunito",fontSize: 22,fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: mondayKey,
+                        child: TextFormField(
+                          controller: mondayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+
+                              hintText: "Enter Monday Entire Day Price",
+                              label: Text("Monday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: tuesdayKey,
+                        child: TextFormField(
+                          controller: tuesdayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Tuesday Entire Day Price",
+                              label: Text("Tuesday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: wednesdayKey,
+                        child: TextFormField(
+                          controller: wednesdayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Wednesday Entire Day Price",
+                              label: Text("Wednesday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: thursdayKey,
+                        child: TextFormField(
+                          controller: thursdayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Thursday Entire Day Price",
+                              label: Text("Thursday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: fridayKey,
+                        child: TextFormField(
+                          controller: fridayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Friday Entire Day Price",
+                              label: Text("Friday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: saturdayKey,
+                        child: TextFormField(
+                          controller: saturdayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Saturday Entire Day Price",
+                              label: Text("Saturday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Form(
+                        key: sundayKey,
+                        child: TextFormField(
+                          controller: sundayController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Price Required";
+                            } else {
+                              return null;
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: const InputDecoration(
+
+                              hintText: "Enter Sunday Entire Day Price",
+                              label: Text("Sunday"),
+                              fillColor: Colors.white,
+                              filled: true,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide.none,
+                              )),
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CupertinoButton(
+                        color: Colors.green,
+                        onPressed: () async {
+                          if (mondayKey.currentState!.validate() &
+                          tuesdayKey.currentState!.validate() &
+                          wednesdayKey.currentState!.validate() &
+                          thursdayKey.currentState!.validate() &
+                          fridayKey.currentState!.validate() &
+                          saturdayKey.currentState!.validate() &
+                          sundayKey.currentState!.validate()) {
+                            await _server
+                                .collection("SportistanPartners")
+                                .doc(RegisterDataClass.groundID.toString())
+                                .update({
+                              'MondayEntireDay':
+                              mondayController.value.text.trim().toString(),
+                              'TuesdayEntireDay':
+                              tuesdayController.value.text.trim().toString(),
+                              'WednesdayEntireDay':
+                              wednesdayController.value.text.trim().toString(),
+                              'ThursdayEntireDay':
+                              thursdayController.value.text.trim().toString(),
+                              'FridayEntireDay':
+                              fridayController.value.text.trim().toString(),
+                              'SaturdayEntireDay':
+                              saturdayController.value.text.trim().toString(),
+                              'SundayEntireDay':
+                              sundayController.value.text.trim().toString(),
+                            }).then((value) =>
+                            {PageRouter.pushRemoveUntil(context, const NavHome())});
+                          }
+                        },
+                        child: const Text("Finish Setup")),
+                  )
+                ]))));
+  }
 }

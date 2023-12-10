@@ -69,8 +69,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: MyHomePage(),
+    return  MaterialApp(
+      theme: ThemeData.light(useMaterial3: false),
+      themeMode: ThemeMode.light,
+      home: const MyHomePage(),
     );
   }
 }
@@ -89,6 +91,8 @@ class _MyHomePageState extends State<MyHomePage>
   final _auth = FirebaseAuth.instance;
 
   final _server = FirebaseFirestore.instance;
+
+  bool isAccountOnHold = false;
 
   @override
   void initState() {
@@ -127,7 +131,10 @@ class _MyHomePageState extends State<MyHomePage>
                                   if (mounted)
                                     {
                                       PageRouter.pushRemoveUntil(
-                                          context, const NavHome())
+                                          context,
+                                          BeforeHome(
+                                            value: value,
+                                          ))
                                     }
                                 }
                             });
@@ -136,6 +143,9 @@ class _MyHomePageState extends State<MyHomePage>
                       Errors.flushBarInform(
                           e.message, context, "Connectivity Error");
                     }
+                    _userStateSave();
+                  } catch (e) {
+                    _userStateSave();
                   }
                 } else {
                   _userStateSave();
@@ -196,6 +206,90 @@ class _MyHomePageState extends State<MyHomePage>
       }
     } else {
       _moveToDecision(const OnBoard());
+    }
+  }
+}
+
+class BeforeHome extends StatefulWidget {
+  const BeforeHome({super.key, required this.value});
+
+  final QuerySnapshot<Map<String, dynamic>> value;
+
+  @override
+  State<BeforeHome> createState() => _BeforeHomeState();
+}
+
+class _BeforeHomeState extends State<BeforeHome> {
+  bool accountOnHold = false;
+  ValueNotifier<bool> accountOnHoldListener = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => Future.delayed(const Duration(milliseconds: 2000), () async {
+              checkHealth();
+            }));
+    return  Scaffold(
+      body: ValueListenableBuilder(valueListenable: accountOnHoldListener, builder: (context, value, child) => value ? Column(
+        mainAxisAlignment:
+        MainAxisAlignment.spaceAround,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+                "Your Account is On Hold",
+                style: TextStyle(
+                  fontFamily: "DMSans",
+                  fontSize: 22,
+                ),
+                softWrap: true),
+          ),
+          Icon(Icons.warning,
+              color: Colors.red,
+              size: MediaQuery.of(context)
+                  .size
+                  .height /
+                  5),
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+                "Your Account is On Hold Due to Some Reasons Please Contact Customer Support if You Think This is a Mistake Write an Email Support@Sportistan.co.in or Call +918591719905",
+                style: TextStyle(
+                  fontFamily: "DMSans",fontSize: 16
+                ),
+                softWrap: true),
+          ),
+        ],
+      ) : const Center(
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            strokeWidth: 1,
+            color: Colors.green,
+          )
+        ],
+      )),)
+    );
+  }
+
+  void checkHealth() {
+    for (int i = 0; i < widget.value.docChanges.length; i++) {
+      if (widget.value.docChanges[i].doc.get('isAccountOnHold')) {
+        accountOnHold = true;
+        accountOnHoldListener.value = true;
+        break;
+      } else {
+        continue;
+      }
+    }
+    if (!accountOnHold) {
+      PageRouter.pushRemoveUntil(context, const NavHome());
     }
   }
 }

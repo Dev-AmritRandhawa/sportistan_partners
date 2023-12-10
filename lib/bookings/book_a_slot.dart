@@ -156,22 +156,21 @@ class _BookASlotState extends State<BookASlot> {
     final granted = await FlutterContactPicker.hasPermission();
     if (granted) {
       final PhoneContact contact =
-          await FlutterContactPicker.pickPhoneContact();
+      await FlutterContactPicker.pickPhoneContact();
       setState(() {
         _phoneContact = contact;
       });
       if (_phoneContact!.phoneNumber != null) {
         if (_phoneContact!.phoneNumber!.number!.length > 10) {
-          controller.text = _phoneContact!.phoneNumber!.number!.substring(3);
+          controller.text = _phoneContact!.phoneNumber!.number!.substring(3).split(" ").join("");
         } else {
-          controller.text = _phoneContact!.phoneNumber!.number!;
+          controller.text = _phoneContact!.phoneNumber!.number!.split(" ").join("");
         }
       }
     } else {
       requestPermission(controller);
     }
   }
-
   requestPermission(controller) async {
     await FlutterContactPicker.requestPermission();
     checkPermissionForContacts(controller);
@@ -327,10 +326,7 @@ class _BookASlotState extends State<BookASlot> {
                                 nameKeyA.currentState!.validate();
                               },
                               keyboardType: TextInputType.name,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp("[a-zA-Z]")),
-                              ],
+
                               decoration: const InputDecoration(
                                   fillColor: Colors.white,
                                   labelText: "Contact Person*",
@@ -517,47 +513,7 @@ class _BookASlotState extends State<BookASlot> {
                                   )
                                 ],
                               ),
-                              value
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(right: 50),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          MaterialButton(
-                                              elevation: 0,
-                                              color: Colors.white,
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          25)),
-                                              onPressed: () {
-                                                amountUpdateListener.value =
-                                                    false;
-                                                priceController.text =
-                                                    priceController.value.text;
-                                                updatedPrice = double.parse(
-                                                        priceController
-                                                            .value.text)
-                                                    .round()
-                                                    .toInt();
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                        const SnackBar(
-                                                  content:
-                                                      Text("Amount Updated"),
-                                                  backgroundColor: Colors.green,
-                                                ));
-                                              },
-                                              child: const Text(
-                                                "Update Amount",
-                                                style: TextStyle(
-                                                    color: Colors.blue),
-                                              )),
-                                        ],
-                                      ),
-                                    )
-                                  : Container(),
+
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: ValueListenableBuilder(
@@ -954,21 +910,19 @@ class _BookASlotState extends State<BookASlot> {
                                               controller:
                                                   advancePaymentControllerTeamB,
                                               validator: (value) {
+                                              int advanceB = 0;
+                                                if(checkBoxTeamB.value){
+                                              advanceB = double.parse(advancePaymentControllerTeamB.value.text).round().toInt();
+                                                }
+                                              var advanceA = double.parse(advancePaymentController.value.text).round().toInt();
+                                              var totalSlot = double.parse(priceController.value.text).round().toInt();
                                                 if (value!.isEmpty) {
                                                   Errors.flushBarInform(
                                                       "Advance Amount is Missing",
                                                       context,
                                                       "Error");
                                                   return "Enter Advance";
-                                                } else if (double.parse(
-                                                            advancePaymentControllerTeamB
-                                                                .value.text)
-                                                        .round()
-                                                        .toInt() >
-                                                    double.parse(priceController
-                                                            .value.text)
-                                                        .round()
-                                                        .toInt()) {
+                                                } else if (advanceA + advanceB > totalSlot) {
                                                   return "Invalid Amount";
                                                 } else {
                                                   return null;
@@ -1117,7 +1071,7 @@ class _BookASlotState extends State<BookASlot> {
                   title: const Text("KYC is Pending",
                       style: TextStyle(color: Colors.orange)),
                   content: Text(
-                      "Your ${widget.groundName} KYC is Under Review Please Check Status in Profile > Verified Grounds or Contact Helpdesk"),
+                      "Your ${widget.groundName} KYC is Under Review Please Check Status in Profile > My Grounds or Contact Helpdesk"),
                   actions: [
                     TextButton(
                         onPressed: () {
@@ -1136,7 +1090,7 @@ class _BookASlotState extends State<BookASlot> {
       List<DocumentChange<Map<String, dynamic>>> data) async {
     double commissionCharge;
     num balance = data.first.doc.get("sportistanCredit");
-    num sportistanCredit = balance;
+    num sportistanCredit = balance;   String groundType = data.first.doc.get("groundType");
     num commission = data.first.doc.get("commission");
     double result = double.parse(priceController.value.text.trim()) / 100;
     if (alreadyCommissionCharged) {
@@ -1162,6 +1116,7 @@ class _BookASlotState extends State<BookASlot> {
             'bookingCreated': DateTime.parse(widget.date),
             'bookedAt': DateTime.now(),
             'userID': _auth.currentUser!.uid,
+            'groundType': groundType,
             'group': widget.group,
             'isBookingCancelled': false,
             'entireDayBooking': false,
@@ -1170,6 +1125,7 @@ class _BookASlotState extends State<BookASlot> {
             'feesDue': calculateFeesDue(),
             'paymentMode': PaymentMode.type,
             'ratingGiven': false,
+
             'rating': 3.0,
             'bothTeamBooked': checkBoxTeamB.value,
             'groundID': widget.groundID,
@@ -1207,7 +1163,15 @@ class _BookASlotState extends State<BookASlot> {
             'slotID': widget.slotID,
             'bookingID': uniqueID,
             'date': widget.date,
-          }).then((value) => {alertUser(bookingID: uniqueID)});
+          }).then((value) async => {
+            await _server
+                .collection("SportistanPartners")
+                .doc(data.first.doc.id)
+                .update({
+              'sportistanCredit': sportistanCredit - commissionCharge
+            }).then((value) => {
+              alertUser(bookingID: uniqueID)})
+          });
         } on SocketException catch (e) {
           if (mounted) {
             Errors.flushBarInform(
@@ -1233,6 +1197,7 @@ class _BookASlotState extends State<BookASlot> {
             'groundName': widget.groundName,
             'bookingCreated': DateTime.parse(widget.date),
             'bookedAt': DateTime.now(),
+            'groundType': groundType,
             'isBookingCancelled': false,
             'userID': _auth.currentUser!.uid,
             'bookingCommissionCharged': commissionCharge,
@@ -1278,12 +1243,6 @@ class _BookASlotState extends State<BookASlot> {
             'bookingID': widget.bookingID,
             'date': widget.date,
           }).then((value) async => {
-                    await _server
-                        .collection("SportistanPartners")
-                        .doc(data.first.doc.id)
-                        .update({
-                      'sportistanCredit': sportistanCredit - commissionCharge
-                    }).then((value) async => {
                       await _server
                           .collection("SportistanPartners")
                           .doc(data.first.doc.id)
@@ -1292,8 +1251,7 @@ class _BookASlotState extends State<BookASlot> {
                       }).then((value) => {
                       alertUser(bookingID: widget.bookingID)})
 
-                      })
-                  });
+                      });
         } on SocketException catch (e) {
           if (mounted) {
             Errors.flushBarInform(
@@ -1323,7 +1281,7 @@ class _BookASlotState extends State<BookASlot> {
               const Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Text(
-                  "Not Able to create booking due to low balance Balance",
+                  "Not Able to create booking due to low balance",
                   style: TextStyle(fontFamily: "DMSans", fontSize: 16),
                 ),
               ),

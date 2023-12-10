@@ -7,7 +7,7 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sportistan_partners/nav_bar/nav_home.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'package:sportistan_partners/utils/send_cloud_message.dart';
@@ -48,6 +48,8 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar:
+          AppBar(backgroundColor: Colors.white, foregroundColor: Colors.black),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -85,34 +87,6 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                               color: Colors.white,
                               child: Column(
                                 children: [
-                                  Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            "Booking ID",
-                                            style: TextStyle(
-                                                fontFamily: "DMSans",
-                                                fontSize: MediaQuery.of(context)
-                                                        .size
-                                                        .height /
-                                                    50),
-                                          ),
-                                          Text(
-                                            doc["bookingID"],
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontFamily: "DMSans",
-                                                fontSize: MediaQuery.of(context)
-                                                        .size
-                                                        .height /
-                                                    50),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
                                   Padding(
                                     padding: EdgeInsets.only(
                                       left: MediaQuery.of(context).size.width /
@@ -147,8 +121,18 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                               fontWeight: FontWeight.bold)),
                                     ],
                                   ),
-                                  const Text(
-                                    "Booked Slots",
+                                  const Card(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "Booked Slots",
+                                        style: TextStyle(fontFamily: "DMSans"),
+                                      ),
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Row(children: [Text("All Slots are Booked For a Day")],),
                                   ),
                                   SizedBox(
                                     width: double.infinity,
@@ -195,28 +179,17 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                       ),
                                     ),
                                   ),
-                                  isTeamBAvailable
-                                      ? const Card(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "Full Booked",
-                                              style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        )
-                                      : const Card(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Half Booked",
-                                                style: TextStyle(
-                                                    color: Colors.orangeAccent,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                          ),
-                                        ),
+                                  const Card(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "Entire Day is Booked",
+                                        style: TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
                                   Padding(
                                     padding: EdgeInsets.all(
                                       MediaQuery.of(context).size.width / 20,
@@ -241,7 +214,7 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                         ),
                                         Row(
                                           children: [
-                                            const Text("Slot Amount : "),
+                                            const Text("Entire Day Amount : "),
                                             Text(
                                               "Rs. ${doc["slotPrice"]}",
                                               style: const TextStyle(
@@ -256,7 +229,7 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Fees Due : "),
+                                      const Text("Due : "),
                                       Text(
                                         "Rs. ${doc["feesDue"]}",
                                         style: TextStyle(
@@ -494,7 +467,8 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                                     actions: [
                                                       TextButton(
                                                           onPressed: () async {
-                                                            cancelEntireDayBookingCancel(
+                                                            Navigator.pop(ctx);
+                                                            await cancelEntireDayBookingCancel(
                                                                 groupID);
                                                           },
                                                           child: const Text(
@@ -549,12 +523,9 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                                     actions: [
                                                       TextButton(
                                                           onPressed: () async {
+                                                            Navigator.pop(ctx);
                                                             await cancelEntireDayBookingCancel(
                                                                 groupID);
-                                                            if (mounted) {
-                                                              Navigator.pop(
-                                                                  ctx);
-                                                            }
                                                           },
                                                           child: const Text(
                                                               "Cancel Booking",
@@ -607,8 +578,14 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                     },
                   );
                 } else {
-                  return const CircularProgressIndicator(
-                    strokeWidth: 1,
+                  return const Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 1,
+                        ),
+                      ],
+                    ),
                   );
                 }
               },
@@ -638,57 +615,49 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
   }
 
   refundInit({
-    required String groundID,
     required num refund,
   }) async {
-    num sportistanCredit;
-    try {
-      await _server
-          .collection("SportistanPartners")
-          .where("userID", isEqualTo: userID)
-          .get()
-          .then((value) async => {
-                if (value.docChanges.isNotEmpty)
-                  {
-                    await _server
-                        .collection("SportistanPartners")
-                        .where("groundID", isEqualTo: groundID)
-                        .get()
-                        .then((value) async => {
-                              sportistanCredit = value.docChanges.first.doc
-                                  .get('sportistanCredit'),
-                              await _server
-                                  .collection("SportistanPartners")
-                                  .doc(value.docChanges.first.doc.id)
-                                  .update({
-                                'sportistanCredit': sportistanCredit + refund
-                              }).then((value) => {sendNotification()})
-                            })
-                  }
-                else
-                  {
-                    await _server
-                        .collection("Sportistan")
-                        .where("userID", isEqualTo: userID)
-                        .get()
-                        .then((value) async => {
-                              sportistanCredit = value.docChanges.first.doc
-                                  .get('sportistanCredit'),
-                              await _server
-                                  .collection("Sportistan")
-                                  .doc(value.docChanges.first.doc.id)
-                                  .update({
-                                'sportistanCredit': sportistanCredit + refund
-                              }).then((value) => {sendNotification()})
-                            })
-                  }
-              });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Failed to Refund")));
-      }
-    }
+    await sendNotification();
+    await _server
+        .collection("SportistanPartners")
+        .where("userID", isEqualTo: userID)
+        .get()
+        .then((value) async => {
+              if (value.docChanges.isNotEmpty)
+                {
+                  await _server
+                      .collection("SportistanPartners")
+                      .doc(value.docChanges.first.doc.id)
+                      .update({
+                    'sportistanCredit':
+                        value.docChanges.first.doc.get('sportistanCredit') +
+                            refund
+                  }),
+                  if (mounted) {Navigator.pop(context)}
+                }
+              else
+                {
+                  await _server
+                      .collection("Sportistan")
+                      .where("userID", isEqualTo: userID)
+                      .get()
+                      .then((value) async =>
+                          {if (value.docChanges.isNotEmpty) {
+                            await _server
+                                .collection("Sportistan")
+                                .doc(value.docChanges.first.doc.id)
+                                .update({
+                              'sportistanCredit': value.docChanges.first.doc.get('sportistanCredit') + refund
+                            }),
+                            if(mounted){
+                              Navigator.pop(context)
+
+                            }
+                          }
+
+                  })
+                }
+            });
   }
 
   sendNotification() async {
@@ -703,13 +672,10 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
         "$groundName Booking is Cancelled of Slot Entire Day $date",
         "Booking Cancelled",
         token);
-    if (mounted) {
-      Navigator.pop(context);
-    }
   }
 
+  late String groundID;
   late num refundCalculation;
-  String? groundID;
 
   Future<void> cancelEntireDayBookingCancel(String groupID) async {
     try {
@@ -719,20 +685,16 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
           .get()
           .then((value) async => {
                 refundCalculation =
-                    value.docChanges.first.doc.get("sportistanCredit"),
-                for (int i = 0; i < value.docChanges.length; i++)
+                    value.docChanges.first.doc.get("bookingCommissionCharged"),
+                for (int i = 0; i < value.size; i++)
                   {
                     await _server
                         .collection("GroundBookings")
-                        .doc(value.docs[i].id)
+                        .doc(value.docChanges[i].doc.id)
                         .update({'isBookingCancelled': true})
-                  }
+                  },
+                refundInit(refund: refundCalculation)
               });
-      refundInit(groundID: groundID.toString(), refund: refundCalculation);
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Booking Cancelled")));
-      }
     } catch (e) {
       return;
     }
