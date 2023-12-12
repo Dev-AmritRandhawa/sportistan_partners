@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'package:chips_choice/chips_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
@@ -27,7 +27,6 @@ class BookEntireDay extends StatefulWidget {
       {super.key,
       required this.date,
       required this.groundID,
-
       required this.groundName});
 
   @override
@@ -47,6 +46,8 @@ class _BookEntireDayState extends State<BookEntireDay> {
   GlobalKey<FormState> advancePaymentKey = GlobalKey<FormState>();
 
   late List<DocumentChange<Map<String, dynamic>>> data;
+
+  bool updateSmsAlert = true;
 
   @override
   void initState() {
@@ -310,7 +311,10 @@ class _BookEntireDayState extends State<BookEntireDay> {
                                 return "Enter Advance";
                               } else if (int.parse(
                                       advancePaymentController.value.text) >
-                                  double.parse(entireDayAmount!).toDouble().round().toInt()) {
+                                  double.parse(entireDayAmount!)
+                                      .toDouble()
+                                      .round()
+                                      .toInt()) {
                                 return "Invalid Amount";
                               } else {
                                 return null;
@@ -413,7 +417,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
   }
 
   List allData = [];
-   String? entireDayAmount;
+  String? entireDayAmount;
   late num commission;
 
   Future<void> _checkBalance(
@@ -421,13 +425,15 @@ class _BookEntireDayState extends State<BookEntireDay> {
     num balance = data.first.doc.get("sportistanCredit");
     num commission = data.first.doc.get("commission");
     String groundType = data.first.doc.get("groundType");
-    double result = double.parse(entireDayAmount!).toDouble().toInt().round() / 100;
+    double result =
+        double.parse(entireDayAmount!).toDouble().toInt().round() / 100;
     double commissionCharge = result * commission.toInt();
     if (commissionCharge <= balance) {
       createBooking(
           balance: balance,
           commissionCharge: commissionCharge,
-          keepBalance: balance, groundType: groundType);
+          keepBalance: balance,
+          groundType: groundType);
     } else {
       showModalBottomSheet(
         context: context,
@@ -638,10 +644,11 @@ class _BookEntireDayState extends State<BookEntireDay> {
         'bookedAt': DateTime.now(),
         'userID': _auth.currentUser!.uid,
         'group': widget.date,
-        'groundType' : groundType,
+        'groundType': groundType,
         'isBookingCancelled': false,
         'entireDayBooking': true,
         'groupID': groupID,
+        'shouldCountInBalance': false,
         'bookingCommissionCharged': commissionCharge,
         'entireDayBookingID': bookingID,
         'includeSlots': includeSlots,
@@ -680,12 +687,34 @@ class _BookEntireDayState extends State<BookEntireDay> {
         .doc(data.first.doc.id)
         .update({'sportistanCredit': keepBalance - commissionCharge}).then(
             (value) => {
-                  if (mounted)
-                    {
-                      PageRouter.pushReplacement(context,
-                          BookingEntireDayInfo(bookingID: bookingID[0]))
-                    }
+                  if (mounted) {alertUser(bookingID: bookingID[0])}
                 });
+  }
+
+  Future<void> sendSms({required String number}) async {
+    String url =
+        'http://api.bulksmsgateway.in/sendmessage.php?user=sportslovez&password=7788330&mobile=$number&message=Your Booking is Confirmed at ${widget.groundName} on ${DateFormat.yMMMd().format(DateTime.parse(widget.date))} for Entire Day Thanks for Choosing Facility on Sportistan&sender=SPTNOT&type=3&template_id=1407170003612415391';
+    await http.post(Uri.parse(url));
+  }
+
+  Future<void> alertUser({required String bookingID}) async {
+    if (updateSmsAlert) {
+      if (numberControllerA.value.text.isNotEmpty) {
+        await sendSms(number: numberControllerA.value.text);
+        if (numberControllerA.value.text.isNotEmpty) {
+          if (numberControllerA.value.text != numberControllerA.value.text) {
+            await sendSms(number: numberControllerA.value.text);
+          }
+        }
+      }
+    }
+    updateSmsAlert = false;
+    moveToReceipt(bookingID: bookingID);
+  }
+
+  moveToReceipt({required String bookingID}) async {
+    PageRouter.pushReplacement(
+        context, BookingEntireDayInfo(bookingID: bookingID));
   }
 }
 

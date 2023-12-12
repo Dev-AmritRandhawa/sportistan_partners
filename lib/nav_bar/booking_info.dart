@@ -607,8 +607,14 @@ class _BookingInfoState extends State<BookingInfo> {
                     },
                   );
                 } else {
-                  return const CircularProgressIndicator(
-                    strokeWidth: 1,
+                  return const Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 1,
+                        ),
+                      ],
+                    ),
                   );
                 }
               },

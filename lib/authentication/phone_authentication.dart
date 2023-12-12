@@ -553,7 +553,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       codeSent: (String verificationId, int? resendToken) async {
         verification = verificationId;
       },
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 0),
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
   }

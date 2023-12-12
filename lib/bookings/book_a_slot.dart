@@ -83,8 +83,7 @@ class _BookASlotState extends State<BookASlot> {
 
   late int updatedPrice;
 
-  bool updateSmsAlert = false;
-
+  bool updateSmsAlert = true;
   bool alreadyCommissionCharged = false;
 
   Future<void> serverInit() async {
@@ -1022,7 +1021,7 @@ class _BookASlotState extends State<BookASlot> {
         }
       }
     }
-    updateSmsAlert = true;
+    updateSmsAlert = false;
     moveToReceipt(bookingID: bookingID);
   }
 
@@ -1119,6 +1118,7 @@ class _BookASlotState extends State<BookASlot> {
             'groundType': groundType,
             'group': widget.group,
             'isBookingCancelled': false,
+            'shouldCountInBalance' : false,
             'entireDayBooking': false,
             'bookingCommissionCharged': commissionCharge,
             'entireDayBookingID': [],
@@ -1198,6 +1198,7 @@ class _BookASlotState extends State<BookASlot> {
             'bookingCreated': DateTime.parse(widget.date),
             'bookedAt': DateTime.now(),
             'groundType': groundType,
+            'shouldCountInBalance' : false,
             'isBookingCancelled': false,
             'userID': _auth.currentUser!.uid,
             'bookingCommissionCharged': commissionCharge,
