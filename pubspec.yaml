@@ -44,7 +44,7 @@ dependencies:
   delayed_display: ^2.0.0
   firebase_auth: ^4.15.2
   firebase_core: ^2.24.2
-  cloud_firestore: ^4.12.2
+  cloud_firestore: ^4.13.5
   firebase_app_check: ^0.2.1+8
   shared_preferences: ^2.2.0
   app_settings: ^5.0.0
@@ -57,7 +57,7 @@ dependencies:
   carousel_slider: ^4.2.1
   grouped_list: ^5.1.2
   file_picker: ^6.1.1
-  firebase_messaging: ^14.6.8
+  firebase_messaging: ^14.7.8
   pinput: ^3.0.1
   sliding_clipped_nav_bar: ^3.1.0+4
   flutter_phone_direct_caller: ^2.1.1
@@ -72,14 +72,12 @@ dependencies:
   path_provider: ^2.1.1
   flutter_local_notifications: ^16.1.0
   share_plus: any
-  flutter_profile_picture: ^2.0.0
-  paytm_allinonesdk: ^1.1.7
-  crypto: ^3.0.3
   image_cropper: ^5.0.1
   dotted_border: ^2.1.0
   crop_your_image: ^0.7.5
   liquid_pull_to_refresh: ^3.0.1
   permission_handler: ^11.1.0
+
 
 
 dev_dependencies:

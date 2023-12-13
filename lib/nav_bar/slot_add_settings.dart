@@ -487,7 +487,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
             .data,
         'locationName': RegisterDataClass.address,
         'isVerified': false,
-        'sportistanCredit': 500,
+        'sportistanCredit': 10000,
         'isKYCPending': true,
         'kycStatus': 'Under Review',
         'commission': 10,
@@ -568,7 +568,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       'phoneNumber': _auth.currentUser!.phoneNumber,
       'kycStatus': 'Under Review',
       'rejectReason': [],
-      'commission': 10,
+      'commission': 5,
       'groundID': '',
       'groundName': '',
       'profileImageLink': '',
@@ -644,7 +644,8 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                 physics: const BouncingScrollPhysics(),
                 child: Column(children: [
                   const Text("Final Step",style: TextStyle(fontFamily: "Nunito",fontSize: 22,fontWeight: FontWeight.bold)),
-                  Padding(
+                  const Text("Set Entire Day Price",style: TextStyle(fontFamily: "DMSans",fontSize: 22,),),
+                      Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Form(
                         key: mondayKey,

@@ -64,8 +64,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     panelHeightClosed = MediaQuery.of(context).size.height / 15;
-    return MaterialApp(
-        home: Scaffold(
+    return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(alignment: Alignment.topCenter, children: <Widget>[
         GoogleMap(
@@ -265,7 +264,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
               topLeft: Radius.circular(18.0), topRight: Radius.circular(18.0)),
         )
       ]),
-    ));
+    );
   }
 
   _panel(ScrollController sc) {

@@ -313,7 +313,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                                         50,
                                     color: Colors.black87,
                                     fontFamily: "Nunito"),
-                                fillColor: Colors.grey.shade200,
+                                fillColor: Colors.white,
                                 filled: true,
                                 border: const OutlineInputBorder(
                                   borderSide: BorderSide.none,

@@ -1,15 +1,8 @@
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart';
 import 'package:delayed_display/delayed_display.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
-import 'package:paytm_allinonesdk/paytm_allinonesdk.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 
 class SportistanCredit extends StatefulWidget {
@@ -170,43 +163,7 @@ class _SportistanCreditState extends State<SportistanCredit>
                               ),
                             ],
                           ),
-                          CupertinoButton(
-                              color: Colors.green,
-                              onPressed: () {
-                                showModalBottomSheet(enableDrag: true,
 
-                                  context: context,
-                                  builder: (context) {
-                                    return  SingleChildScrollView(
-                                          physics: const BouncingScrollPhysics(),
-                                          child: Column(
-                                            children: [
-                                              const Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text("Select Payment Method",
-                                                    style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontFamily: "DMSans")),
-                                              ),
-                                              customPaymentCardButton(
-                                                  assetName: 'assets/upi.png', index: 0),
-                                              customPaymentCardButton(
-                                                  assetName: 'assets/logo-paytm.png',
-                                                  index: 1),
-                                              customPaymentCardButton(
-                                                  assetName: 'assets/visa.png', index: 2),
-                                              customPaymentCardButton(
-                                                  assetName: 'assets/mastercard.png',
-                                                  index: 3),
-                                              SizedBox(height: MediaQuery.of(context).size.height/5,)
-                                            ],
-                                          ),
-
-                                    );
-                                  },
-                                );
-                              },
-                              child: const Text("Add Credits")),
                         ],
                       ),
                     ),
@@ -221,10 +178,6 @@ class _SportistanCreditState extends State<SportistanCredit>
               ..forward();
           },
         ),
-        const Text(
-          "Payment Gateway is Safe & Secure",
-          style: TextStyle(fontFamily: "DMSans", color: Colors.black54),
-        )
       ]),
     );
   }
@@ -245,101 +198,4 @@ class _SportistanCreditState extends State<SportistanCredit>
             });
   }
 
-  Widget customPaymentCardButton(
-      {required String assetName, required int index}) {
-    return OutlinedButton(
-      onPressed: () {
-        goPaymentMode(index);
-      },
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-      ),
-      child: Image.asset(
-        assetName,
-        height: 80,
-        width: double.infinity,
-      ),
-    );
-  }
-
-  List<String> pMode = ['UPI', 'Wallet', 'Visa', 'MasterCard'];
-
-  void goPaymentMode(int index) {
-    switch (index) {
-      case 0:
-        {
-          paytmIntegratedCall(0);
-        }
-      case 1:
-        {
-          paytmIntegratedCall(1);
-        }
-      case 2:
-        {
-          paytmIntegratedCall(2);
-        }
-      case 3:
-        {
-          paytmIntegratedCall(3);
-        }
-    }
-  }
-
-  Future<void> paytmIntegratedCall(index) async {
-    var bytes = utf8.encode(jsonEncode({"body": {"mid": "SPORTS33075460479694", "orderId": "SPORTS3307"}})); // data being hashed
-
-    var digest = sha256.convert(bytes);
-
-    print("Digest as hex string: $digest");
-    const String url = 'https://securegw-stage.paytm.in/v3/order/status';
-    final String body = jsonEncode({
-      "body": {"mid": "SPORTS33075460479694", "orderId": "SPORTS3307"},
-      "head": {"signature": "$digest"}
-    });
-
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: body,
-    );
-
-    if (response.statusCode == 200) {
-      // Successful POST request
-      print('Response: ${response.body}');
-    } else {
-      // Handle the error
-      print('Error: ${response.statusCode}');
-    }
-  }
-
-  startTransaction({
-    required String mid,
-    required String orderId,
-    required String amount,
-    required String txnToken,
-    required String callbackurl,
-    required bool isStaging,
-    required bool restrictAppInvoke,
-  }) {
-    var response = AllInOneSdk.startTransaction(mid, orderId, amount, txnToken,
-        callbackurl, isStaging, restrictAppInvoke);
-    response.then((value) {
-      print(value);
-      setState(() {
-        result = value.toString();
-      });
-    }).catchError((onError) {
-      if (onError is PlatformException) {
-        result = "${onError.message} \n  ${onError.details}";
-        print(result);
-      } else {
-        result = onError.toString();
-        print(result);
-      }
-    });
-  }
 }

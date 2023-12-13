@@ -202,7 +202,7 @@ packages:
     source: hosted
     version: "0.3.3+8"
   crypto:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: crypto
       sha256: ff625774173754681d66daaf4a448684fb04b78f902da9cb3d308c19cc5e8bab
@@ -494,14 +494,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.17"
-  flutter_profile_picture:
-    dependency: "direct main"
-    description:
-      name: flutter_profile_picture
-      sha256: "067caecef0d7162d3858eaca3c5859cbbb21b3e5704c2bc5b96b50ffe267f45d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   flutter_rating_bar:
     dependency: "direct main"
     description:
@@ -992,14 +984,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
-  paytm_allinonesdk:
-    dependency: "direct main"
-    description:
-      name: paytm_allinonesdk
-      sha256: "970eb30ddd3a3d7a27131cdfd72c812d7e2ca2afd9747d690d96e60e5944f168"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.2"
   permission_handler:
     dependency: "direct main"
     description:

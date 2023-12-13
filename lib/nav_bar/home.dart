@@ -282,38 +282,31 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      const Row(children: [
+                      Row(children: [
                         Icon(
                           Icons.rectangle_outlined,
                           color: Colors.green,
                         ),
                         Text("Available")
                       ]),
-                      const Row(children: [
+                      Row(children: [
                         Icon(
                           Icons.rectangle,
                           color: Colors.green,
                         ),
                         Text("Booked")
                       ]),
-                      const Row(children: [
+                      Row(children: [
                         Icon(
                           Icons.rectangle,
                           color: Colors.orangeAccent,
                         ),
                         Text("Half Booked")
-                      ]),
-                      Row(children: [
-                        Icon(
-                          Icons.rectangle,
-                          color: Colors.red[200],
-                        ),
-                        const Text("Fees Due")
                       ]),
                     ],
                   ),
@@ -777,7 +770,7 @@ class _HomeState extends State<Home> {
                                                 ? Row(
                                                             children: [
                                                               Text(
-                                                               bookings.entireDayBooked ? 'Fees Due of Entire Day ' : "Fees Due :",
+                                                               bookings.entireDayBooked ? 'Entire Day Due ' : "Fees Due :",
                                                                 style: TextStyle(
                                                                     fontSize: MediaQuery.of(context)
                                                                             .size
