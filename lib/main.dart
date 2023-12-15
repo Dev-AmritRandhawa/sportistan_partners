@@ -232,7 +232,10 @@ class _BeforeHomeState extends State<BeforeHome> {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => Future.delayed(const Duration(milliseconds: 2000), () async {
+          if(mounted){
+
               checkHealth();
+          }
             }));
     return  Scaffold(
       body: ValueListenableBuilder(valueListenable: accountOnHoldListener, builder: (context, value, child) => value ? Column(
