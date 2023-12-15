@@ -147,10 +147,13 @@ class _BookingInfoState extends State<BookingInfo> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text("Booking Generate : "),
-                                      Text(
-                                          "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                            "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),softWrap: true),
+                                      ),
                                     ],
                                   ),
                                   Row(

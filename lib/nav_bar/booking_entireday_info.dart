@@ -115,10 +115,13 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text("Booking Generate : "),
-                                      Text(
-                                          "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                            "${DateFormat.yMMMMEEEEd().format(booked)} - ${DateFormat.jms().format(booked)}",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),softWrap: true),
+                                      ),
                                     ],
                                   ),
                                   const Card(
@@ -190,13 +193,14 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                       ),
                                     ),
                                   ),
+
                                   Padding(
                                     padding: EdgeInsets.all(
                                       MediaQuery.of(context).size.width / 20,
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                       children: [
                                         Row(
                                           children: [
@@ -214,7 +218,7 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
                                         ),
                                         Row(
                                           children: [
-                                            const Text("Entire Day Amount : "),
+                                            const Text("Entire Day : "),
                                             Text(
                                               "Rs. ${doc["slotPrice"]}",
                                               style: const TextStyle(

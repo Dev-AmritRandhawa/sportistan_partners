@@ -658,6 +658,12 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                               return null;
                             }
                           },
+                          onEditingComplete: (){
+                              tuesdayController.text = mondayController.value.text;
+                              wednesdayController.text = mondayController.value.text;
+                              thursdayController.text = mondayController.value.text;
+                              fridayController.text = mondayController.value.text;
+                          },
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly
