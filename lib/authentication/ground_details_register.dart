@@ -240,7 +240,11 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                                   RegisterDataClass.personName = nameController.value.text;
                                   setSlots();
                                 })
-                            : Container(),
+                         : Padding(
+                           padding: const EdgeInsets.all(8.0),
+                           child: const Text('Images Not Selected',style: TextStyle(fontFamily: "DMSans",color: Colors.red)),
+                         ),
+
                       ],
                     ),
                     ListView.builder(

@@ -228,7 +228,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     } else {
                                       return null;
                                     }
-                                  },
+                                  },maxLength: 10,
                                   controller: numberController,
                                   onChanged: (data) {
                                     numberKey.currentState!.validate();

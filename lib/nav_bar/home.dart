@@ -60,6 +60,8 @@ class _HomeState extends State<Home> {
 
   int bookingCreated = 0;
 
+  String? groundType;
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -97,6 +99,7 @@ class _HomeState extends State<Home> {
                     {
                       dropDownList.add(value.docs[i]["groundName"]),
                       groundID.add(value.docs[i]["groundID"]),
+                      groundType = value.docs[i]["groundType"],
                       refID.add(value.docs[i].id),
                       onwards.add(value.docs[i].get('onwards')),
                       groundAddress.add(
@@ -168,7 +171,7 @@ class _HomeState extends State<Home> {
                   {getAllSlots()},
               });
     } catch (error) {
-      getAllSlots();
+      return;
     }
   }
 
@@ -253,10 +256,8 @@ class _HomeState extends State<Home> {
                         initialDate: DateTime.now(),
                         firstDate: DateTime.now(),
                         lastDate: DateTime.now().add(const Duration(days: 90)));
-                    if (pickedDate != null) {
-                      getFilterData(pickedDate);
-                    }
-                  },
+                    getFilterData(pickedDate!);
+                                    },
                   child: Card(
                     color: Colors.grey.shade100,
                     elevation: 0,
@@ -461,7 +462,7 @@ class _HomeState extends State<Home> {
             slotPrice: bookingElements[bookingCreated]["slotPrice"],
             feesDue: bookingElements[bookingCreated]["feesDue"],
             entireDayBooked: bookingElements[bookingCreated]
-                ["entireDayBooking"],
+                ["entireDayBooking"], nonFormattedTime: bookingElements[bookingCreated]["nonFormattedTime"],
           ));
           alreadyBooked.remove(slotsElements[DateFormat.EEEE().format(date)][j]
                   ["slotID"] +
@@ -479,7 +480,7 @@ class _HomeState extends State<Home> {
             slotPrice: slotsElements[DateFormat.EEEE().format(date)][j]
                 ["price"],
             feesDue: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
-            entireDayBooked: false,
+            entireDayBooked: false, nonFormattedTime: slotsElements[DateFormat.EEEE().format(date)][j]["nonFormattedTime"],
           ));
         }
       }
@@ -510,6 +511,9 @@ class _HomeState extends State<Home> {
       showChildOpacityTransition: false,
       backgroundColor: Colors.green,
       color: Colors.white,
+      springAnimationDurationInMilliseconds: 500,
+
+
       key: _refreshIndicatorKey,
       onRefresh: _handleRefresh,
       child: SingleChildScrollView(
@@ -938,7 +942,7 @@ class _HomeState extends State<Home> {
                     groundAddress: groundAddress[groundIndex],
                     groundName: dropDownList[groundIndex],
                     bookingID: bookings.bookingID,
-                    slotPrice: bookings.slotPrice,
+                    slotPrice: bookings.slotPrice, groundType: groundType.toString(), nonFormattedTime: bookings.nonFormattedTime,
                   ))).then((value) => {collectBookings(index: groundIndex)});
     }
     if (Platform.isIOS) {
@@ -955,7 +959,7 @@ class _HomeState extends State<Home> {
               groundAddress: groundAddress[groundIndex],
               groundName: dropDownList[groundIndex],
               bookingID: bookings.bookingID,
-              slotPrice: bookings.slotPrice,
+              slotPrice: bookings.slotPrice, groundType: groundType.toString(), nonFormattedTime: bookings.nonFormattedTime,
             ),
           )).then((value) => {collectBookings(index: groundIndex)});
     }
@@ -1039,7 +1043,7 @@ class _HomeState extends State<Home> {
               slotTime: bookingElements[l]["slotTime"],
               slotPrice: bookingElements[l]["slotPrice"],
               feesDue: bookingElements[l]["feesDue"],
-              entireDayBooked: false,
+              entireDayBooked: false, nonFormattedTime: bookingElements[l]["nonFormattedTime"],
             ));
           }
         } else {
@@ -1087,7 +1091,7 @@ class _HomeState extends State<Home> {
         slotTime: bookingElements[bookingCreated]["slotTime"],
         slotPrice: bookingElements[bookingCreated]["slotPrice"],
         feesDue: bookingElements[bookingCreated]["feesDue"],
-        entireDayBooked: bookingElements[bookingCreated]["entireDayBooking"],
+        entireDayBooked: bookingElements[bookingCreated]["entireDayBooking"], nonFormattedTime: bookingElements[bookingCreated]["nonFormattedTime"],
       ));
       alreadyBooked.remove(slotsElements[DateFormat.EEEE().format(date)][j]
               ["slotID"] +
@@ -1104,7 +1108,7 @@ class _HomeState extends State<Home> {
         slotTime: slotsElements[DateFormat.EEEE().format(date)][j]["time"],
         slotPrice: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
         feesDue: slotsElements[DateFormat.EEEE().format(date)][j]["price"],
-        entireDayBooked: false,
+        entireDayBooked: false, nonFormattedTime: slotsElements[DateFormat.EEEE().format(date)][j]["nonFormattedTime"],
       ));
     }
     if (mounted) {
@@ -1126,6 +1130,7 @@ class MyBookings {
   final String slotStatus;
   final String slotTime;
   final String bookingID;
+  final String nonFormattedTime;
 
   MyBookings(
       {required this.slotID,
@@ -1136,5 +1141,6 @@ class MyBookings {
       required this.bookingID,
       required this.slotPrice,
       required this.slotStatus,
+      required this.nonFormattedTime,
       required this.slotTime});
 }

@@ -24,6 +24,7 @@ import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'dart:async';
 import 'package:share_plus/share_plus.dart';
+
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
@@ -119,59 +120,58 @@ class _ProfileState extends State<Profile> {
                           valueListenable: imageListener,
                           builder: (context, value, child) {
                             return value
-
-                                    ? Stack(
-                                        alignment: Alignment.bottomRight,
-                                        children: [
-                                          InkWell(
-                                            onTap: (){
-                                              PageRouter.push(context,
+                                ? Stack(
+                                    alignment: Alignment.bottomRight,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          PageRouter.push(context,
                                                   const CropImageTool())
-                                                  .then((value) => {check()});
-                                            },
-                                            child: CircleAvatar(
-                                              backgroundColor: const Color(0XFFfffbf0),
-                                              foregroundImage: NetworkImage( profileLink.toString()),
-
-                                              maxRadius: MediaQuery.of(context)
-                                                      .size
-                                                      .height /
-                                                  12,
-                                            ),
+                                              .then((value) => {check()});
+                                        },
+                                        child: CircleAvatar(
+                                          backgroundColor:
+                                              const Color(0XFFfffbf0),
+                                          foregroundImage: NetworkImage(
+                                              profileLink.toString()),
+                                          maxRadius: MediaQuery.of(context)
+                                                  .size
+                                                  .height /
+                                              12,
+                                        ),
+                                      ),
+                                      const CircleAvatar(
+                                        child: Icon(
+                                          Icons.camera_alt_rounded,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Stack(
+                                    alignment: Alignment.bottomRight,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          PageRouter.push(context,
+                                                  const CropImageTool())
+                                              .then((value) => {check()});
+                                        },
+                                        child: CircleAvatar(
+                                          backgroundColor:
+                                              Colors.orange.shade200,
+                                          maxRadius: 50,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child:
+                                                Image.asset('assets/logo.png'),
                                           ),
-                                          const CircleAvatar(
-                                            child: Icon(
-                                              Icons.camera_alt_rounded,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.camera_alt_rounded,
                                       )
-                                    : Stack(
-                                        alignment: Alignment.bottomRight,
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              PageRouter.push(context,
-                                                      const CropImageTool())
-                                                  .then((value) => {check()});
-                                            },
-                                            child: CircleAvatar(
-                                              backgroundColor:
-                                                  Colors.orange.shade200,
-                                              maxRadius: 50,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
-                                                child: Image.asset(
-                                                    'assets/logo.png'),
-                                              ),
-                                            ),
-                                          ),
-                                          const Icon(
-                                            Icons.camera_alt_rounded,
-                                          )
-                                        ],
-                            );
+                                    ],
+                                  );
                           },
                         )
                       ],
@@ -179,51 +179,6 @@ class _ProfileState extends State<Profile> {
                 DelayedDisplay(
                   child: Column(
                     children: [
-                      isAuthorized
-                          ? CupertinoButton(
-                              borderRadius: BorderRadius.zero,
-                              color: Colors.black87,
-                              onPressed: () {
-                                _handleSignIn();
-                              },
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  const Text(
-                                    "Connect with Google Account",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Image.asset("assets/gicon.png",
-                                        height:
-                                            MediaQuery.of(context).size.height /
-                                                45),
-                                  )
-                                ],
-                              ))
-                          : Card(
-                              color: Colors.green,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                    "Connected (${_auth.currentUser!.email})",
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: "DMSans")),
-                              )),
-                      isAuthorized
-                          ? Container()
-                          : const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                "Connect with Google Account helps you to login faster",
-                                style: TextStyle(
-                                    color: Colors.black54,
-                                    fontFamily: "DMSans"),
-                              ),
-                            ),
                       InkWell(
                         onTap: () {
                           PageRouter.push(context, const SportistanCredit());
@@ -472,6 +427,150 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       ),
+                      isAuthorized
+                          ? const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                "Connect with Google Account helps you to login faster",
+                                style: TextStyle(
+                                    color: Colors.black54,
+                                    fontFamily: "DMSans"),
+                              ),
+                            )
+                          : Container(),
+                      isAuthorized
+                          ? CupertinoButton(
+                              borderRadius: BorderRadius.zero,
+                              color: Colors.black87,
+                              onPressed: () {
+                                _handleSignIn();
+                              },
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  const Text(
+                                    "Connect with Google Account",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.asset("assets/gicon.png",
+                                        height:
+                                            MediaQuery.of(context).size.height /
+                                                45),
+                                  )
+                                ],
+                              ))
+                          : Card(
+                              color: Colors.green,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                    "Connected (${_auth.currentUser!.email})",
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: "DMSans")),
+                              )),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: CupertinoButton(
+                            color: Colors.red,
+                            onPressed: () {
+                              showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (ctx) {
+                                  return Platform.isIOS
+                                      ? CupertinoAlertDialog(
+                                          content: const Text(
+                                              "Would you like to Logout?",
+                                              style: TextStyle(
+                                                  fontFamily: "Nunito")),
+                                          title: const Text("Account Logout"),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () async {
+                                                  await FirebaseAuth.instance
+                                                      .signOut()
+                                                      .then((value) => {
+                                                            handleSignOut()
+                                                                .then(
+                                                                    (value) => {
+                                                                          Navigator.pop(
+                                                                              ctx),
+                                                                          PageRouter.pushRemoveUntil(
+                                                                              context,
+                                                                              const MyApp())
+                                                                        })
+                                                          });
+                                                },
+                                                child: const Text(
+                                                  "Logout",
+                                                  style: TextStyle(
+                                                      color: Colors.green),
+                                                )),
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(ctx);
+                                                },
+                                                child: const Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                      color: Colors.red),
+                                                )),
+                                          ],
+                                        )
+                                      : AlertDialog(
+                                          content: const Text(
+                                              "Would you like to Logout?",
+                                              style: TextStyle(
+                                                  fontFamily: "Nunito")),
+                                          title: const Text("Account Logout"),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () async {
+                                                  await FirebaseAuth.instance
+                                                      .signOut()
+                                                      .then((value) => {
+                                                            handleSignOut()
+                                                                .then(
+                                                                    (value) => {
+                                                                          Navigator.pop(
+                                                                              ctx),
+                                                                          PageRouter.pushRemoveUntil(
+                                                                              context,
+                                                                              const MyApp())
+                                                                        })
+                                                          });
+                                                },
+                                                child: const Text(
+                                                  "Logout",
+                                                  style: TextStyle(
+                                                      color: Colors.green),
+                                                )),
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(ctx);
+                                                },
+                                                child: const Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                      color: Colors.red),
+                                                )),
+                                          ],
+                                        );
+                                },
+                              );
+                            },
+                            child:
+
+                                const Text(
+                                  "Logout",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                             ),
+                      ),
                       InkWell(
                         onTap: () {
                           showDialog(
@@ -540,7 +639,7 @@ class _ProfileState extends State<Profile> {
                           );
                         },
                         child: Card(
-                          color: Colors.red,
+                          color: Colors.orange,
                           child: Padding(
                             padding: EdgeInsets.all(
                                 MediaQuery.of(context).size.height / 50),
@@ -562,108 +661,6 @@ class _ProfileState extends State<Profile> {
                             ),
                           ),
                         ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CupertinoButton(
-                              onPressed: () {
-                                showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (ctx) {
-                                    return Platform.isIOS
-                                        ? CupertinoAlertDialog(
-                                            content: const Text(
-                                                "Would you like to Logout?",
-                                                style: TextStyle(
-                                                    fontFamily: "Nunito")),
-                                            title: const Text("Account Logout"),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () async {
-                                                    await FirebaseAuth.instance
-                                                        .signOut()
-                                                        .then((value) => {
-                                                              handleSignOut()
-                                                                  .then(
-                                                                      (value) =>
-                                                                          {
-                                                                            Navigator.pop(ctx),
-                                                                            PageRouter.pushRemoveUntil(context,
-                                                                                const MyApp())
-                                                                          })
-                                                            });
-                                                  },
-                                                  child: const Text(
-                                                    "Logout",
-                                                    style: TextStyle(
-                                                        color: Colors.green),
-                                                  )),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                  },
-                                                  child: const Text(
-                                                    "Cancel",
-                                                    style: TextStyle(
-                                                        color: Colors.red),
-                                                  )),
-                                            ],
-                                          )
-                                        : AlertDialog(
-                                            content: const Text(
-                                                "Would you like to Logout?",
-                                                style: TextStyle(
-                                                    fontFamily: "Nunito")),
-                                            title: const Text("Account Logout"),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () async {
-                                                    await FirebaseAuth.instance
-                                                        .signOut()
-                                                        .then((value) => {
-                                                              handleSignOut()
-                                                                  .then(
-                                                                      (value) =>
-                                                                          {
-                                                                            Navigator.pop(ctx),
-                                                                            PageRouter.pushRemoveUntil(context,
-                                                                                const MyApp())
-                                                                          })
-                                                            });
-                                                  },
-                                                  child: const Text(
-                                                    "Logout",
-                                                    style: TextStyle(
-                                                        color: Colors.green),
-                                                  )),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                  },
-                                                  child: const Text(
-                                                    "Cancel",
-                                                    style: TextStyle(
-                                                        color: Colors.red),
-                                                  )),
-                                            ],
-                                          );
-                                  },
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(Icons.power_settings_new,
-                                      color: Colors.green.shade900),
-                                  Text(
-                                    "Logout",
-                                    style:
-                                        TextStyle(color: Colors.green.shade900),
-                                  ),
-                                ],
-                              )),
-                        ],
                       ),
                       isAuthorized
                           ? Container()
@@ -751,9 +748,9 @@ class _ProfileState extends State<Profile> {
 
   Future<void> shareApp() async {
     const String androidAppLink =
-        'https://play.google.com/store/apps/details?cat=-1&id=com.whatsapp&hl=en_AU';
+        'https://play.google.com/store/apps/details?id=co.in.sportistan.sportistan_partners';
     const String appleAppLink =
-        'https://apps.apple.com/in/app/whatsapp-messenger/id310633997';
+        'https://play.google.com/store/apps/details?id=co.in.sportistan.sportistan_partners';
     if (Platform.isAndroid) {
       const String message =
           'Now You can also list your Facilities & get bookings and start earning: $androidAppLink';
@@ -981,7 +978,7 @@ class _ProfileState extends State<Profile> {
       codeSent: (String verificationId, int? resendToken) async {
         finalVerification = verificationId;
       },
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 0),
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
   }
@@ -1045,7 +1042,7 @@ class _ProfileState extends State<Profile> {
       codeSent: (String verificationId, int? resendToken) async {
         verification = verificationId;
       },
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 0),
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
   }
@@ -1124,13 +1121,13 @@ class _ProfileState extends State<Profile> {
           .where("userID", isEqualTo: _auth.currentUser!.uid)
           .get()
           .then((value) => {
-            if(value.docChanges.isNotEmpty){
-                profileLink = value.docs.last.get("profileImageLinks"),
-                imageListener.value = true
-            }else{
-                imageListener.value = false
-
-            }
+                if (value.docChanges.isNotEmpty)
+                  {
+                    profileLink = value.docs.last.get("profileImageLinks"),
+                    imageListener.value = true
+                  }
+                else
+                  {imageListener.value = false}
               });
     } catch (e) {
       if (mounted) {

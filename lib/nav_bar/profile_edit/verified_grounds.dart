@@ -49,7 +49,6 @@ class _VerifiedGroundsState extends State<VerifiedGrounds> {
               stream: _server
                   .collection("SportistanPartners")
                   .where("userID", isEqualTo: _auth.currentUser!.uid)
-                  .where("isKYCPending", isEqualTo: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 return snapshot.hasData
@@ -103,6 +102,7 @@ class _VerifiedGroundsState extends State<VerifiedGrounds> {
                                     ),
                                     Row(
                                       children: [
+                                        const Icon(Icons.verified_outlined),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(

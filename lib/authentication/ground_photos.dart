@@ -39,7 +39,9 @@ class _GroundPhotosState extends State<GroundPhotos>
   var currentPage = 0;
 
   var otherService = TextEditingController();
+  var descriptionController = TextEditingController();
   GlobalKey<FormState> otherServiceKey = GlobalKey<FormState>();
+  GlobalKey<FormState> descriptionControllerKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -104,12 +106,42 @@ class _GroundPhotosState extends State<GroundPhotos>
                             padding: const EdgeInsets.only(top: 20, bottom: 20),
                             child: CupertinoButton(
                                 color: Colors.orangeAccent,
-                                child: const Text("Select Images"),
+                                child: const Text("Select Ground Images"),
                                 onPressed: () async {
                                   uploadImages();
                                 }),
                           )
                         : Container(),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        child: Form(
+                          key: descriptionControllerKey,
+                          child: TextFormField(
+                            controller: descriptionController,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return "Add Description";
+                              } else if(value.length < 49) {
+                                return 'Write Minimum 50 Words';
+                              }else {
+                                return null;
+                              }
+                            },
+                            decoration: const InputDecoration(
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(),
+                              errorStyle: TextStyle(color: Colors.red),
+                              filled: true,
+                              hintText: "Description",
+                              hintStyle: TextStyle(color: Colors.black45),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 40),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     ListView.builder(
                       itemCount: RegisterDataClass.groundImages.length,
                       shrinkWrap: true,
@@ -173,6 +205,27 @@ class _GroundPhotosState extends State<GroundPhotos>
                   ],
                 ),
               ),
+              CupertinoButton(
+                  onPressed: () {
+                    if (otherServiceKey.currentState!.validate()) {
+                      if (!serviceOptions.contains(otherService.value.text)) {
+                        serviceTags.add(otherService.value.text);
+                        serviceOptions.add(otherService.value.text);
+                        setState(() {});
+                      } else {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Already Added"),
+                          duration: Duration(seconds: 1),
+                        ));
+                      }
+                    }
+                  },
+                  color: Colors.indigoAccent,
+                  child: const Text(
+                    "Add More Services",
+                    style: TextStyle(color: Colors.white),
+                  )),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Form(
@@ -180,9 +233,10 @@ class _GroundPhotosState extends State<GroundPhotos>
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width / 1.2,
                     child: TextFormField(
+                      maxLength: 15,
                       validator: (v) {
                         if (v!.isEmpty) {
-                          return "Empty Field";
+                          return "Empty Field (Optional)";
                         } else {
                           return null;
                         }
@@ -190,7 +244,7 @@ class _GroundPhotosState extends State<GroundPhotos>
                       controller: otherService,
                       decoration: const InputDecoration(
                           fillColor: Colors.white,
-                          hintText: "Add Other Services if Available",
+                          hintText: "Add Other Services if Available (Optional)",
                           border: InputBorder.none,
                           errorStyle: TextStyle(color: Colors.red),
                           filled: true,
@@ -199,43 +253,31 @@ class _GroundPhotosState extends State<GroundPhotos>
                   ),
                 ),
               ),
-              CupertinoButton(
-                  onPressed: () {
-                    if(otherServiceKey.currentState!.validate()){
-                      if (!serviceOptions.contains(otherService.value.text)) {
-                        serviceTags.add(otherService.value.text);
-                        serviceOptions.add(otherService.value.text);
-                        setState(() {});
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Already Added"),
-                          duration: Duration(seconds: 1),
-                        ));
-                      }
-                    }
 
-                  },
-                  color: Colors.indigoAccent,
-                  child: const Text(
-                    "Add More Services",
-                    style: TextStyle(color: Colors.white),
-                  )),
               RegisterDataClass.groundImages.isNotEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: CupertinoButton(
                           color: Colors.green,
                           onPressed: () async {
-                            RegisterDataClass.groundServices = serviceTags;
-                            PageRouter.push(
-                                context, const GroundDetailsRegister());
+                            if (descriptionControllerKey.currentState!
+                                .validate()) {
+                              RegisterDataClass.groundServices = serviceTags;
+                              RegisterDataClass.description =
+                                  descriptionController.value.text.trim();
+                              PageRouter.push(
+                                  context, const GroundDetailsRegister());
+                            }
                           },
                           child: const Text(
                             "Next Step",
                             style: TextStyle(fontFamily: "DMSans"),
                           )),
                     )
-                  : Container(),
+                  : Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: const Text('Images Not Selected',style: TextStyle(fontFamily: "DMSans",color: Colors.red)),
+                  ),
               SizedBox(
                 height: MediaQuery.of(context).size.height / 10,
               )

@@ -27,6 +27,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
   var nameTECs = <int, TextEditingController>{};
   var nameTECs2 = <int, TextEditingController>{};
   var mailTECs = <int, TextEditingController>{};
+  var mailTECs2 = <int, TextEditingController>{};
 
   var item = <int, Widget>{};
 
@@ -70,11 +71,13 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
       var name = nameTECs[i]?.value.text;
       var name2 = nameTECs2[i]?.value.text;
       var mail = mailTECs[i]?.value.text;
-      if (name != null && mail != null) {
+      var mail2 = mailTECs2[i]?.value.text;
+      if (name != null && mail != null && name2 != null && mail2 != null) {
         DataSave.entries.add(Entry(
             name: name.toString(),
             name2: name2.toString(),
-            email: mail.toString()));
+            email: mail.toString(),
+            email2: mail2.toString()));
       }
     }
     await setSlot();
@@ -87,9 +90,11 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
     var nameController = TextEditingController();
     var nameController2 = TextEditingController();
     var mailController = TextEditingController();
+    var mailController2 = TextEditingController();
     nameTECs.addAll({index: nameController});
     nameTECs2.addAll({index: nameController2});
     mailTECs.addAll({index: mailController});
+    mailTECs2.addAll({index: mailController2});
     return Card(
       elevation: 5.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -99,6 +104,13 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
           Text("SLOT : ${index + 1}",
               style: const TextStyle(
                   fontWeight: FontWeight.bold, fontFamily: "DMSans")),
+          Visibility(
+            visible: false,
+            child: TextFormField(
+              readOnly: true,
+              controller: mailController2,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -114,6 +126,9 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                       );
                       if (tod != null) {
                         nameController.text = formatTimeOfDay(tod);
+                        final now = DateTime.now();
+                        final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute).toString();
+                        mailController2.text = dt;
                       }
                     },
                     controller: nameController,
@@ -218,6 +233,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                 nameTECs.removeWhere((key, value) => key == index);
                 nameTECs2.removeWhere((key, value) => key == index);
                 mailTECs.removeWhere((key, value) => key == index);
+                mailTECs2.removeWhere((key, value) => key == index);
               });
             },
             child: const Text('Remove', style: TextStyle(color: Colors.white)),
@@ -276,98 +292,96 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
                     child: CircularProgressIndicator(strokeWidth: 1),
                   )
                 : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                    children: [
-                      Form(
-                        key: entireDayControllerKey2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: TextFormField(
-                            validator: (input) {
-                              if (input!.isEmpty) {
-                                return "Price is Missing";
-                              } else {
-                                return null;
-                              }
-                            },
-                            style: const TextStyle(
-                                color: Colors.black87),
-                            controller: entireDayController,
-                            keyboardType: TextInputType.name,
-                            inputFormatters: [
-                              FilteringTextInputFormatter
-                                  .digitsOnly
-                            ],
-                            decoration: InputDecoration(
-                                label: const Text("Entire Day Amount"),
-                                errorStyle: const TextStyle(
-                                    color: Colors.red),
-                                hintText:
-                                "Enter Entire Day Amount for ${widget.day} ?",
-                                hintStyle: TextStyle(
-                                    fontSize:
-                                    MediaQuery.of(context)
-                                        .size
-                                        .height /
-                                        50,
-                                    color: Colors.black87,
-                                    fontFamily: "Nunito"),
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: const OutlineInputBorder(
-                                  borderSide: BorderSide.none,
-                                )),
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        Form(
+                          key: entireDayControllerKey2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: TextFormField(
+                              validator: (input) {
+                                if (input!.isEmpty) {
+                                  return "Price is Missing";
+                                } else {
+                                  return null;
+                                }
+                              },
+                              style: const TextStyle(color: Colors.black87),
+                              controller: entireDayController,
+                              keyboardType: TextInputType.name,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              decoration: InputDecoration(
+                                  label: const Text("Entire Day Amount"),
+                                  errorStyle:
+                                      const TextStyle(color: Colors.red),
+                                  hintText:
+                                      "Enter Entire Day Amount for ${widget.day} ?",
+                                  hintStyle: TextStyle(
+                                      fontSize:
+                                          MediaQuery.of(context).size.height /
+                                              50,
+                                      color: Colors.black87,
+                                      fontFamily: "Nunito"),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  border: const OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                  )),
+                            ),
                           ),
                         ),
-                      ),
-                      Form(
-                        key: formKey,
-                        child: Column(
-                          children: [
-                            ListView.builder(
-                                shrinkWrap: true,
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: item.length,
-                                itemBuilder: (context, index) {
-                                  return item.values.elementAt(index);
-                                }),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: MaterialButton(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20)),
-                                    color: Colors.green,
-                                    elevation: 0,
-                                    onPressed: () {
-                                      setState(() {
-                                        if (item.isNotEmpty) {
-                                          item.addAll({
-                                            item.keys.last + 1: newMethod(
-                                                context, item.keys.last + 1)
-                                          });
-                                        } else {
-                                          item.addAll({0: newMethod(context, 0)});
-                                        }
-                                      });
-                                    },
-                                    child: const Text('Add Slot + ',
-                                        style: TextStyle(
-                                            fontFamily: "DMSans",
-                                            color: Colors.white)),
+                        Form(
+                          key: formKey,
+                          child: Column(
+                            children: [
+                              ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: item.length,
+                                  itemBuilder: (context, index) {
+                                    return item.values.elementAt(index);
+                                  }),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: MaterialButton(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20)),
+                                      color: Colors.green,
+                                      elevation: 0,
+                                      onPressed: () {
+                                        setState(() {
+                                          if (item.isNotEmpty) {
+                                            item.addAll({
+                                              item.keys.last + 1: newMethod(
+                                                  context, item.keys.last + 1)
+                                            });
+                                          } else {
+                                            item.addAll(
+                                                {0: newMethod(context, 0)});
+                                          }
+                                        });
+                                      },
+                                      child: const Text('Add Slot + ',
+                                          style: TextStyle(
+                                              fontFamily: "DMSans",
+                                              color: Colors.white)),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
+                      ],
+                    ),
+                  );
           },
         ));
   }
@@ -391,6 +405,7 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
             'timeEnd': DataSave.entries[i].name2,
             'price': int.parse(DataSave.entries[i].email),
             'slotID': UniqueID.generateRandomString(),
+            'nonFormattedTime':DataSave.entries[i].email2,
           }
       ]
     }).then((value) async => {
@@ -426,9 +441,10 @@ class _NavSlotSettingsState extends State<NavSlotSettings> {
         nameTECs[i]?.text = slotsElements[widget.day][i]['time'];
         nameTECs2[i]?.text = slotsElements[widget.day][i]['timeEnd'];
         mailTECs[i]?.text = slotsElements[widget.day][i]['price'].toString();
-
+        mailTECs2[i]?.text = slotsElements[widget.day][i]['nonFormattedTime'].toString();
       }
-      entireDayController.text = slotsElements['${widget.day}EntireDay'].toString();
+      entireDayController.text =
+          slotsElements['${widget.day}EntireDay'].toString();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

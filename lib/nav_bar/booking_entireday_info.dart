@@ -613,7 +613,7 @@ class _BookingEntireDayInfoState extends State<BookingEntireDayInfo> {
         await imagePath.writeAsBytes(image);
         await Share.shareFiles([imagePath.path],
             text:
-                'Download Sportistan App for Your Sports Facility Booking https://www.sportistan.co.in/');
+                'Download Sportistan App for Your Sports Facility Booking https://www.isportistanapp.web.app/');
       }
     });
   }

@@ -29,6 +29,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
   var nameTECs = <int, TextEditingController>{};
   var nameTECs2 = <int, TextEditingController>{};
   var mailTECs = <int, TextEditingController>{};
+  var mailTECs2 = <int, TextEditingController>{};
 
   var item = <int, Widget>{};
   final _server = FirebaseFirestore.instance;
@@ -58,11 +59,12 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       var name = nameTECs[i]?.value.text;
       var name2 = nameTECs2[i]?.value.text;
       var mail = mailTECs[i]?.value.text;
-      if (name != null && mail != null && name2 != null) {
+      var mail2 = mailTECs2[i]?.value.text;
+      if (name != null && mail != null && mail2 != null && name2 != null) {
         DataSave.entries.add(Entry(
             name: name.toString(),
             name2: name2.toString(),
-            email: mail.toString()));
+            email: mail.toString(), email2: mail2.toString()));
         checkOnwards(i);
       }
     }
@@ -76,9 +78,11 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
     var nameController = TextEditingController();
     var nameController2 = TextEditingController();
     var mailController = TextEditingController();
+    var mailController2 = TextEditingController();
     nameTECs.addAll({index: nameController});
     nameTECs2.addAll({index: nameController2});
     mailTECs.addAll({index: mailController});
+    mailTECs2.addAll({index: mailController2});
     return Card(
       elevation: 5.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -88,6 +92,14 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
           Text("SLOT : ${index + 1}",
               style: const TextStyle(
                   fontWeight: FontWeight.bold, fontFamily: "DMSans")),
+
+          Visibility(
+            visible: false,
+            child: TextFormField(
+              readOnly: true,
+              controller: mailController2,
+              ),
+          ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -103,6 +115,9 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                       );
                       if (tod != null) {
                         nameController.text = formatTimeOfDay(tod);
+                        final now = DateTime.now();
+                        final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute).toString();
+                        mailController2.text = dt;
                       }
                     },
                     controller: nameController,
@@ -209,6 +224,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                 nameTECs.removeWhere((key, value) => key == index);
                 nameTECs2.removeWhere((key, value) => key == index);
                 mailTECs.removeWhere((key, value) => key == index);
+                mailTECs2.removeWhere((key, value) => key == index);
               });
             },
             child: const Text('Remove', style: TextStyle(color: Colors.white)),
@@ -324,6 +340,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
     final format = DateFormat.jm();
+
     return format.format(dt);
   }
 
@@ -395,6 +412,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                     'timeEnd': DataSave.entries[i].name2,
                     'price': int.parse(DataSave.entries[i].email),
                     'slotID': UniqueID.generateRandomString(),
+                    'nonFormattedTime': DataSave.entries[i].email2,
                   }
               ]
             })
@@ -432,6 +450,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         nameTECs[i]?.text = data["Monday"][i]['time'];
         nameTECs2[i]?.text = data["Monday"][i]['timeEnd'];
         mailTECs[i]?.text = data["Monday"][i]['price'].toString();
+        mailTECs2[i]?.text = data["Monday"][i]['nonFormattedTime'].toString();
       }
       listLoad.value = false;
     } catch (e) {
@@ -501,6 +520,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         'userID': _auth.currentUser!.uid,
         'groundID': RegisterDataClass.groundID,
         'groundName': RegisterDataClass.groundName,
+        'description' : RegisterDataClass.description,
         'kycImageLinks': RegisterDataClass.kycUrls,
         'groundServices': RegisterDataClass.groundServices,
         'groundImages': RegisterDataClass.groundUrls,
@@ -564,6 +584,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       'isBadgeAllotted' : false,
       'badges' : [],
       'isAccountOnHold' : false,
+      'description' : '',
       'userID': '',
       'phoneNumber': _auth.currentUser!.phoneNumber,
       'kycStatus': 'Under Review',
@@ -590,8 +611,9 @@ class Entry {
   final String name;
   final String name2;
   final String email;
+  final String email2;
 
-  Entry({required this.name, required this.name2, required this.email});
+  Entry({required this.name, required this.name2, required this.email, required this.email2});
 }
 
 class DataSave {
@@ -645,41 +667,50 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                 child: Column(children: [
                   const Text("Final Step",style: TextStyle(fontFamily: "Nunito",fontSize: 22,fontWeight: FontWeight.bold)),
                   const Text("Set Entire Day Price",style: TextStyle(fontFamily: "DMSans",fontSize: 22,),),
-                      Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Form(
-                        key: mondayKey,
-                        child: TextFormField(
-                          controller: mondayController,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return "Price Required";
-                            } else {
-                              return null;
-                            }
-                          },
-                          onEditingComplete: (){
+                      Column(
+                        children: [
+                          Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: Form(
+                            key: mondayKey,
+                            child: TextFormField(
+                              controller: mondayController,
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return "Price Required";
+                                } else {
+                                  return null;
+                                }
+                              },
+
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              decoration: const InputDecoration(
+
+
+                                  hintText: "Enter Monday Entire Day Price",
+                                  label: Text("Monday"),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                  )),
+                            )),
+                                            ),
+                          TextButton(onPressed: (){
+                            if(mondayKey.currentState!.validate()){
                               tuesdayController.text = mondayController.value.text;
                               wednesdayController.text = mondayController.value.text;
                               thursdayController.text = mondayController.value.text;
                               fridayController.text = mondayController.value.text;
-                          },
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          decoration: const InputDecoration(
+                              fridayController.text = mondayController.value.text;
+                            }
 
-
-                              hintText: "Enter Monday Entire Day Price",
-                              label: Text("Monday"),
-                              fillColor: Colors.white,
-                              filled: true,
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide.none,
-                              )),
-                        )),
-                  ),
+                          }, child: const Text("Copy As Above Price"))
+                        ],
+                      ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Form(

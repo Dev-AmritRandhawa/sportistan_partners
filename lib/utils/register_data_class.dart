@@ -4,6 +4,7 @@ class RegisterDataClass {
   static late double latitude;
   static late double longitude;
   static late String address;
+  static late String description;
   static late String groundID;
   static late String sportsTag;
   static int onwardsAmount = 0;

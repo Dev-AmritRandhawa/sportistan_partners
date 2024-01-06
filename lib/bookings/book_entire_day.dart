@@ -656,6 +656,8 @@ class _BookEntireDayState extends State<BookEntireDay> {
             int.parse(advancePaymentController.value.text.trim().toString()),
         'ratingGiven': false,
         'rating': 3.0,
+        'TeamA' : 'Not Applicable',
+        'TeamB' : "Not Applicable",
         'advancePayment':
             double.parse(advancePaymentController.value.text).round().toInt(),
         'bothTeamBooked': true,

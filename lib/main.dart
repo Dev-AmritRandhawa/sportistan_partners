@@ -69,7 +69,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
+    return MaterialApp(
       theme: ThemeData.light(useMaterial3: false),
       themeMode: ThemeMode.light,
       home: const MyHomePage(),
@@ -174,12 +174,25 @@ class _MyHomePageState extends State<MyHomePage>
                   },
                 ),
               ),
-              AnimatedTextKit(
-                animatedTexts: [
-                  RotateAnimatedText('Made With ❤️ of Ground Owners',
-                      textStyle: TextStyle(
-                          fontSize: MediaQuery.of(context).size.height / 40),
-                      duration: const Duration(milliseconds: 3500)),
+              Text(
+                'Made With ❤️ of Ground Owners',
+                style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.height / 40),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Powered by ',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                  Text(
+                    'Sports Lovez LLP',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "DMSans",
+                        fontSize: MediaQuery.of(context).size.height / 40),
+                  ),
                 ],
               ),
             ],
@@ -232,53 +245,49 @@ class _BeforeHomeState extends State<BeforeHome> {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => Future.delayed(const Duration(milliseconds: 2000), () async {
-          if(mounted){
-
-              checkHealth();
-          }
+              if (mounted) {
+                checkHealth();
+              }
             }));
-    return  Scaffold(
-      body: ValueListenableBuilder(valueListenable: accountOnHoldListener, builder: (context, value, child) => value ? Column(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceAround,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(
-                "Your Account is On Hold",
-                style: TextStyle(
-                  fontFamily: "DMSans",
-                  fontSize: 22,
+    return Scaffold(
+        body: ValueListenableBuilder(
+      valueListenable: accountOnHoldListener,
+      builder: (context, value, child) => value
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text("Your Account is On Hold",
+                      style: TextStyle(
+                        fontFamily: "DMSans",
+                        fontSize: 22,
+                      ),
+                      softWrap: true),
                 ),
-                softWrap: true),
-          ),
-          Icon(Icons.warning,
-              color: Colors.red,
-              size: MediaQuery.of(context)
-                  .size
-                  .height /
-                  5),
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(
-                "Your Account is On Hold Due to Some Reasons Please Contact Customer Support if You Think This is a Mistake Write an Email Support@Sportistan.co.in or Call +918591719905",
-                style: TextStyle(
-                  fontFamily: "DMSans",fontSize: 16
+                Icon(Icons.warning,
+                    color: Colors.red,
+                    size: MediaQuery.of(context).size.height / 5),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                      "Your Account is On Hold Due to Some Reasons Please Contact Customer Support if You Think This is a Mistake Write an Email Support@Sportistan.co.in or Call +918591719905",
+                      style: TextStyle(fontFamily: "DMSans", fontSize: 16),
+                      softWrap: true),
                 ),
-                softWrap: true),
-          ),
-        ],
-      ) : const Center(
-          child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            strokeWidth: 1,
-            color: Colors.green,
-          )
-        ],
-      )),)
-    );
+              ],
+            )
+          : const Center(
+              child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  strokeWidth: 1,
+                  color: Colors.green,
+                )
+              ],
+            )),
+    ));
   }
 
   void checkHealth() {
