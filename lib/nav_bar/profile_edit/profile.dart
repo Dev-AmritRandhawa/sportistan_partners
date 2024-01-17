@@ -18,8 +18,8 @@ import 'package:sportistan_partners/authentication/search_field.dart';
 import 'package:sportistan_partners/main.dart';
 import 'package:sportistan_partners/nav_bar/profile_edit/crop.dart';
 import 'package:sportistan_partners/nav_bar/profile_edit/edit_ground.dart';
-import 'package:sportistan_partners/nav_bar/profile_edit/sportistan_credit.dart';
 import 'package:sportistan_partners/nav_bar/profile_edit/verified_grounds.dart';
+import 'package:sportistan_partners/nav_bar/sportistan_credits.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'dart:async';
@@ -102,6 +102,102 @@ class _ProfileState extends State<Profile> {
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            CupertinoButton(
+                              onPressed: () {
+                                showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (ctx) {
+                                    return Platform.isIOS
+                                        ? CupertinoAlertDialog(
+                                            content: const Text(
+                                                "Would you like to Logout?",
+                                                style: TextStyle(
+                                                    fontFamily: "Nunito")),
+                                            title: const Text("Account Logout"),
+                                            actions: [
+                                              TextButton(
+                                                  onPressed: () async {
+                                                    await FirebaseAuth.instance
+                                                        .signOut()
+                                                        .then((value) => {
+                                                              handleSignOut()
+                                                                  .then(
+                                                                      (value) =>
+                                                                          {
+                                                                            Navigator.pop(ctx),
+                                                                            PageRouter.pushRemoveUntil(context,
+                                                                                const MyApp())
+                                                                          })
+                                                            });
+                                                  },
+                                                  child: const Text(
+                                                    "Logout",
+                                                    style: TextStyle(
+                                                        color: Colors.green),
+                                                  )),
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                  },
+                                                  child: const Text(
+                                                    "Cancel",
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  )),
+                                            ],
+                                          )
+                                        : AlertDialog(
+                                            content: const Text(
+                                                "Would you like to Logout?",
+                                                style: TextStyle(
+                                                    fontFamily: "Nunito")),
+                                            title: const Text("Account Logout"),
+                                            actions: [
+                                              TextButton(
+                                                  onPressed: () async {
+                                                    await FirebaseAuth.instance
+                                                        .signOut()
+                                                        .then((value) => {
+                                                              handleSignOut()
+                                                                  .then(
+                                                                      (value) =>
+                                                                          {
+                                                                            Navigator.pop(ctx),
+                                                                            PageRouter.pushRemoveUntil(context,
+                                                                                const MyApp())
+                                                                          })
+                                                            });
+                                                  },
+                                                  child: const Text(
+                                                    "Logout",
+                                                    style: TextStyle(
+                                                        color: Colors.green),
+                                                  )),
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                  },
+                                                  child: const Text(
+                                                    "Cancel",
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  )),
+                                            ],
+                                          );
+                                  },
+                                );
+                              },
+                              child: const Text(
+                                "Logout",
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                            ),
+                          ],
+                        ),
                         const Text(
                           "Welcome",
                           style: TextStyle(fontFamily: 'DMSans', fontSize: 22),
@@ -125,9 +221,22 @@ class _ProfileState extends State<Profile> {
                                     children: [
                                       InkWell(
                                         onTap: () {
-                                          PageRouter.push(context,
-                                                  const CropImageTool())
-                                              .then((value) => {check()});
+                                          if (Platform.isAndroid) {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const CropImageTool(),
+                                                )).then((value) => {check()});
+                                          }
+                                          if (Platform.isIOS) {
+                                            Navigator.push(
+                                                context,
+                                                CupertinoPageRoute(
+                                                  builder: (context) =>
+                                                      const CropImageTool(),
+                                                )).then((value) => {check()});
+                                          }
                                         },
                                         child: CircleAvatar(
                                           backgroundColor:
@@ -179,6 +288,51 @@ class _ProfileState extends State<Profile> {
                 DelayedDisplay(
                   child: Column(
                     children: [
+                      isAuthorized
+                          ? const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                "Connect with Google Account helps you to login faster",
+                                style: TextStyle(
+                                    color: Colors.black54,
+                                    fontFamily: "DMSans"),
+                              ),
+                            )
+                          : Container(),
+                      isAuthorized
+                          ? CupertinoButton(
+                              borderRadius: BorderRadius.zero,
+                              color: Colors.black87,
+                              onPressed: () {
+                                _handleSignIn();
+                              },
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  const Text(
+                                    "Connect with Google Account",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.asset("assets/gicon.png",
+                                        height:
+                                            MediaQuery.of(context).size.height /
+                                                45),
+                                  )
+                                ],
+                              ))
+                          : Card(
+                              color: Colors.green,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                    "Connected (${_auth.currentUser!.email})",
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: "DMSans")),
+                              )),
                       InkWell(
                         onTap: () {
                           PageRouter.push(context, const SportistanCredit());
@@ -426,150 +580,6 @@ class _ProfileState extends State<Profile> {
                             ),
                           ),
                         ),
-                      ),
-                      isAuthorized
-                          ? const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                "Connect with Google Account helps you to login faster",
-                                style: TextStyle(
-                                    color: Colors.black54,
-                                    fontFamily: "DMSans"),
-                              ),
-                            )
-                          : Container(),
-                      isAuthorized
-                          ? CupertinoButton(
-                              borderRadius: BorderRadius.zero,
-                              color: Colors.black87,
-                              onPressed: () {
-                                _handleSignIn();
-                              },
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  const Text(
-                                    "Connect with Google Account",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Image.asset("assets/gicon.png",
-                                        height:
-                                            MediaQuery.of(context).size.height /
-                                                45),
-                                  )
-                                ],
-                              ))
-                          : Card(
-                              color: Colors.green,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                    "Connected (${_auth.currentUser!.email})",
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: "DMSans")),
-                              )),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: CupertinoButton(
-                            color: Colors.red,
-                            onPressed: () {
-                              showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (ctx) {
-                                  return Platform.isIOS
-                                      ? CupertinoAlertDialog(
-                                          content: const Text(
-                                              "Would you like to Logout?",
-                                              style: TextStyle(
-                                                  fontFamily: "Nunito")),
-                                          title: const Text("Account Logout"),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () async {
-                                                  await FirebaseAuth.instance
-                                                      .signOut()
-                                                      .then((value) => {
-                                                            handleSignOut()
-                                                                .then(
-                                                                    (value) => {
-                                                                          Navigator.pop(
-                                                                              ctx),
-                                                                          PageRouter.pushRemoveUntil(
-                                                                              context,
-                                                                              const MyApp())
-                                                                        })
-                                                          });
-                                                },
-                                                child: const Text(
-                                                  "Logout",
-                                                  style: TextStyle(
-                                                      color: Colors.green),
-                                                )),
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: const Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                )),
-                                          ],
-                                        )
-                                      : AlertDialog(
-                                          content: const Text(
-                                              "Would you like to Logout?",
-                                              style: TextStyle(
-                                                  fontFamily: "Nunito")),
-                                          title: const Text("Account Logout"),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () async {
-                                                  await FirebaseAuth.instance
-                                                      .signOut()
-                                                      .then((value) => {
-                                                            handleSignOut()
-                                                                .then(
-                                                                    (value) => {
-                                                                          Navigator.pop(
-                                                                              ctx),
-                                                                          PageRouter.pushRemoveUntil(
-                                                                              context,
-                                                                              const MyApp())
-                                                                        })
-                                                          });
-                                                },
-                                                child: const Text(
-                                                  "Logout",
-                                                  style: TextStyle(
-                                                      color: Colors.green),
-                                                )),
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: const Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                )),
-                                          ],
-                                        );
-                                },
-                              );
-                            },
-                            child:
-
-                                const Text(
-                                  "Logout",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                             ),
                       ),
                       InkWell(
                         onTap: () {
@@ -1107,6 +1117,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> check() async {
+    imageListener.value = false;
     try {
       GoogleSignInAccount? account = await googleSignIn.signInSilently();
       if (account != null) {

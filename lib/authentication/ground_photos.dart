@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:sportistan_partners/authentication/ground_details_register.dart';
 import 'package:sportistan_partners/bookings/book_a_slot.dart';
+import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 import 'package:sportistan_partners/utils/register_data_class.dart';
 
@@ -24,11 +25,11 @@ class _GroundPhotosState extends State<GroundPhotos>
 
   List<String> serviceTags = ['Washroom'];
   List<String> serviceOptions = [
+    'Washroom',
     'Flood Lights',
     'Parking',
     'Sound System',
     'Warm Up Area',
-    'Washroom',
     'Coaching Available',
     'Ball Boy',
     'Sitting Area',
@@ -63,6 +64,32 @@ class _GroundPhotosState extends State<GroundPhotos>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+          elevation: 0,
+          title: const Text('Back'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  if (descriptionControllerKey.currentState!.validate()) {
+                    if (RegisterDataClass.groundImages.isNotEmpty) {
+                      RegisterDataClass.groundServices = serviceTags;
+                      RegisterDataClass.description =
+                          descriptionController.value.text.trim();
+                      PageRouter.push(context, const GroundDetailsRegister());
+                    } else {
+                      Errors.flushBarInform(
+                          'Ground Images Required', context, "Add Images");
+                      uploadImages();
+                    }
+                  } else {
+                    Errors.flushBarInform(
+                        'Write Minimum 50 Words', context, "Add Description");
+                  }
+                },
+                icon: const Icon(Icons.arrow_forward_ios_sharp))
+          ]),
       body: SafeArea(
           child: DelayedDisplay(
         child: SingleChildScrollView(
@@ -122,9 +149,11 @@ class _GroundPhotosState extends State<GroundPhotos>
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return "Add Description";
-                              } else if(value.length < 49) {
+                              } else if (value.length < 49) {
+                                Errors.flushBarInform('Write Minimum 50 Words',
+                                    context, "Add Description");
                                 return 'Write Minimum 50 Words';
-                              }else {
+                              } else {
                                 return null;
                               }
                             },
@@ -244,7 +273,8 @@ class _GroundPhotosState extends State<GroundPhotos>
                       controller: otherService,
                       decoration: const InputDecoration(
                           fillColor: Colors.white,
-                          hintText: "Add Other Services if Available (Optional)",
+                          hintText:
+                              "Add Other Services if Available (Optional)",
                           border: InputBorder.none,
                           errorStyle: TextStyle(color: Colors.red),
                           filled: true,
@@ -253,7 +283,6 @@ class _GroundPhotosState extends State<GroundPhotos>
                   ),
                 ),
               ),
-
               RegisterDataClass.groundImages.isNotEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -274,10 +303,12 @@ class _GroundPhotosState extends State<GroundPhotos>
                             style: TextStyle(fontFamily: "DMSans"),
                           )),
                     )
-                  : Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: const Text('Images Not Selected',style: TextStyle(fontFamily: "DMSans",color: Colors.red)),
-                  ),
+                  : const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('Images Not Selected',
+                          style: TextStyle(
+                              fontFamily: "DMSans", color: Colors.red)),
+                    ),
               SizedBox(
                 height: MediaQuery.of(context).size.height / 10,
               )

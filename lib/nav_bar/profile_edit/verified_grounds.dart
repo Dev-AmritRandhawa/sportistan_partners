@@ -70,6 +70,22 @@ class _VerifiedGroundsState extends State<VerifiedGrounds> {
                                           color: Colors.black54,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 22),
+                                    ),  Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Text(
+                                          'Ground Rating ',),
+                                        Text(
+                                          snapshot.data!.docChanges[index].doc
+                                              .get("profileRating").toString(),
+                                          overflow: TextOverflow.visible,
+                                          maxLines: 2,
+                                          style: const TextStyle(
+                                            color: Colors.black54,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),const Icon(Icons.star,color: Colors.orange,)
+                                      ],
                                     ),
                                     Text(
                                       snapshot.data!.docChanges[index].doc
@@ -81,6 +97,7 @@ class _VerifiedGroundsState extends State<VerifiedGrounds> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Row(

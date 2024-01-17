@@ -42,7 +42,7 @@ class Alert {
     showFlushbar(
         context: context,
         flushbar: Flushbar(
-          icon: const Icon(Icons.warning_rounded, color: Colors.white),
+          icon: const Icon(Icons.info_outline, color: Colors.white),
           message: message,
           title: title,
           margin: EdgeInsets.all(MediaQuery.of(context).size.width / 25),

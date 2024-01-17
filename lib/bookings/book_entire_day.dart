@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:http/http.dart' as http;
 import 'package:chips_choice/chips_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +13,6 @@ import 'package:intl/intl.dart';
 import 'package:sportistan_partners/authentication/slot_setting.dart';
 import 'package:sportistan_partners/bookings/book_a_slot.dart';
 import 'package:sportistan_partners/nav_bar/booking_entireday_info.dart';
-import 'package:sportistan_partners/nav_bar/profile_edit/sportistan_credit.dart';
 import 'package:sportistan_partners/utils/errors.dart';
 import 'package:sportistan_partners/utils/page_router.dart';
 
@@ -57,19 +57,16 @@ class _BookEntireDayState extends State<BookEntireDay> {
 
   @override
   void dispose() {
-    teamControllerA.dispose();
     numberControllerA.dispose();
     notesTeamA.dispose();
     nameControllerA.dispose();
     super.dispose();
   }
 
-  TextEditingController teamControllerA = TextEditingController();
   TextEditingController numberControllerA = TextEditingController();
   TextEditingController nameControllerA = TextEditingController();
   GlobalKey<FormState> nameKeyA = GlobalKey<FormState>();
   GlobalKey<FormState> numberKeyA = GlobalKey<FormState>();
-  GlobalKey<FormState> teamControllerKeyA = GlobalKey<FormState>();
   TextEditingController notesTeamA = TextEditingController();
 
   @override
@@ -90,8 +87,8 @@ class _BookEntireDayState extends State<BookEntireDay> {
                     child: Column(
                       children: [
                         const Text("Entire Day Price",
-                            style:
-                                TextStyle(fontSize: 16, fontFamily: "DMSans")),
+                            style: TextStyle(
+                                fontSize: 16, fontFamily: "DMSans")),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text('Rs.${entireDayAmount.toString()}',
@@ -190,37 +187,6 @@ class _BookEntireDayState extends State<BookEntireDay> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Form(
-                          key: teamControllerKeyA,
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width / 1.2,
-                            child: TextFormField(
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return "Team name required.";
-                                } else if (value.length <= 2) {
-                                  return "Enter Correct Name.";
-                                } else {
-                                  return null;
-                                }
-                              },
-                              controller: teamControllerA,
-                              onChanged: (data) {
-                                nameKeyA.currentState!.validate();
-                              },
-                              decoration: const InputDecoration(
-                                  fillColor: Colors.white,
-                                  border: InputBorder.none,
-                                  errorStyle: TextStyle(color: Colors.red),
-                                  labelText: "Team Name*",
-                                  filled: true,
-                                  labelStyle: TextStyle(color: Colors.black)),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Form(
                           key: nameKeyA,
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width / 1.2,
@@ -311,7 +277,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
                                 return "Enter Advance";
                               } else if (int.parse(
                                       advancePaymentController.value.text) >
-                                  double.parse(entireDayAmount!)
+                                  double.parse(entireDayAmount.toString())
                                       .toDouble()
                                       .round()
                                       .toInt()) {
@@ -396,7 +362,6 @@ class _BookEntireDayState extends State<BookEntireDay> {
                   onPressed: () {
                     if (nameKeyA.currentState!.validate() &
                         numberKeyA.currentState!.validate() &
-                        teamControllerKeyA.currentState!.validate() &
                         advancePaymentKey.currentState!.validate()) {
                       if (data.isNotEmpty) {
                         _checkBalance(data);
@@ -417,7 +382,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
   }
 
   List allData = [];
-  String? entireDayAmount;
+  late String entireDayAmount;
   late num commission;
 
   Future<void> _checkBalance(
@@ -425,9 +390,10 @@ class _BookEntireDayState extends State<BookEntireDay> {
     num balance = data.first.doc.get("sportistanCredit");
     num commission = data.first.doc.get("commission");
     String groundType = data.first.doc.get("groundType");
-    double result =
-        double.parse(entireDayAmount!).toDouble().toInt().round() / 100;
-    double commissionCharge = result * commission.toInt();
+    num result =
+        num.parse(entireDayAmount.toString()).toDouble().toInt().round() /
+            100;
+    num commissionCharge = result * commission.toInt();
     if (commissionCharge <= balance) {
       createBooking(
           balance: balance,
@@ -482,9 +448,9 @@ class _BookEntireDayState extends State<BookEntireDay> {
                 ),
                 CupertinoButton(
                     color: Colors.green,
-                    child: const Text("Add Credits"),
+                    child: const Text("Contact Support"),
                     onPressed: () {
-                      PageRouter.push(context, const SportistanCredit());
+                      FlutterPhoneDirectCaller.callNumber('+918591719905');
                     }),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -623,7 +589,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
   String groupID = UniqueID.generateRandomString();
 
   Future<void> createBooking(
-      {required double commissionCharge,
+      {required num commissionCharge,
       required num balance,
       required String groundType,
       required num keepBalance}) async {
@@ -644,6 +610,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
         'bookedAt': DateTime.now(),
         'userID': _auth.currentUser!.uid,
         'group': widget.date,
+        'nonFormattedTime': allData[j]["nonFormattedTime"],
         'groundType': groundType,
         'isBookingCancelled': false,
         'entireDayBooking': true,
@@ -652,18 +619,19 @@ class _BookEntireDayState extends State<BookEntireDay> {
         'bookingCommissionCharged': commissionCharge,
         'entireDayBookingID': bookingID,
         'includeSlots': includeSlots,
-        'feesDue': double.parse(entireDayAmount!).toDouble().round().toInt() -
+        'feesDue': double.parse(entireDayAmount.toString())
+                .toDouble()
+                .round()
+                .toInt() -
             int.parse(advancePaymentController.value.text.trim().toString()),
         'ratingGiven': false,
         'rating': 3.0,
-        'TeamA' : 'Not Applicable',
-        'TeamB' : "Not Applicable",
         'advancePayment':
             double.parse(advancePaymentController.value.text).round().toInt(),
         'bothTeamBooked': true,
         'groundID': widget.groundID,
         "teamA": {
-          'teamName': teamControllerA.value.text,
+          'teamName': "Not Required",
           'personName': nameControllerA.value.text,
           'phoneNumber': numberControllerA.value.text,
           "notesTeamA": notesTeamA.value.text.isNotEmpty
@@ -671,15 +639,17 @@ class _BookEntireDayState extends State<BookEntireDay> {
               : "",
         },
         "teamB": {
-          'teamName': teamControllerA.value.text,
+          'teamName': "Not Required",
           'personName': nameControllerA.value.text,
           'phoneNumber': numberControllerA.value.text,
           "notesTeamB": notesTeamA.value.text.toString(),
         },
-        'slotPrice': double.parse(entireDayAmount!).toDouble().round().toInt(),
+        'slotPrice':
+            double.parse(entireDayAmount.toString()).toDouble().round().toInt(),
         'slotStatus': "Booked",
         'slotTime': allData[j]["time"],
         'slotID': allData[j]["slotID"],
+        'nonFormattedTime': allData[j]["nonFormattedTime"],
         'bookingID': bookingID[j],
         'date': widget.date,
       });
@@ -715,7 +685,7 @@ class _BookEntireDayState extends State<BookEntireDay> {
   }
 
   moveToReceipt({required String bookingID}) async {
-    PageRouter.pushReplacement(
+    PageRouter.pushRemoveUntil(
         context, BookingEntireDayInfo(bookingID: bookingID));
   }
 }

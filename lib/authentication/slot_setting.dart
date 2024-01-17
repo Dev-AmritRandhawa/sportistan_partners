@@ -98,7 +98,7 @@ class SlotSettingsState extends State<SlotSettings> {
                                 ],
                                 title: const Text("Save Data"),
                                 content:
-                                    const Text("Please Save The Slots First"),
+                                    const Text("Please Save Slots to Continue Next."),
                               )
                             : CupertinoAlertDialog(
                                 actions: [

@@ -64,7 +64,8 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         DataSave.entries.add(Entry(
             name: name.toString(),
             name2: name2.toString(),
-            email: mail.toString(), email2: mail2.toString()));
+            email: mail.toString(),
+            email2: mail2.toString()));
         checkOnwards(i);
       }
     }
@@ -92,13 +93,12 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
           Text("SLOT : ${index + 1}",
               style: const TextStyle(
                   fontWeight: FontWeight.bold, fontFamily: "DMSans")),
-
           Visibility(
             visible: false,
             child: TextFormField(
               readOnly: true,
               controller: mailController2,
-              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -116,7 +116,9 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
                       if (tod != null) {
                         nameController.text = formatTimeOfDay(tod);
                         final now = DateTime.now();
-                        final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute).toString();
+                        final dt = DateTime(now.year, now.month, now.day,
+                                tod.hour, tod.minute)
+                            .toString();
                         mailController2.text = dt;
                       }
                     },
@@ -501,6 +503,13 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
           .collection("SportistanPartners")
           .doc(RegisterDataClass.groundID)
           .update({
+        'MondayEntireDay': 0,
+        'TuesdayEntireDay': 0,
+        'WednesdayEntireDay': 0,
+        'ThursdayEntireDay': 0,
+        'FridayEntireDay': 0,
+        'SaturdayEntireDay': 0,
+        'SundayEntireDay': 0,
         'geo': GeoFirePoint(GeoPoint(
                 RegisterDataClass.latitude, RegisterDataClass.longitude))
             .data,
@@ -510,17 +519,19 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         'isKYCPending': true,
         'kycStatus': 'Under Review',
         'commission': 10,
-        'isBadgeAllotted' : false,
-        'badges' : [],
-        'isAccountOnHold' : false,
+        'isBadgeAllotted': false,
+        'badges': [],
+        'isAccountOnHold': false,
         'rejectReason': [],
         'phoneNumber': _auth.currentUser!.phoneNumber,
         'profileImageLink': '',
+        'token': '',
+        'profileRating': 4.0,
         'groundType': RegisterDataClass.sportsTag,
         'userID': _auth.currentUser!.uid,
         'groundID': RegisterDataClass.groundID,
         'groundName': RegisterDataClass.groundName,
-        'description' : RegisterDataClass.description,
+        'description': RegisterDataClass.description,
         'kycImageLinks': RegisterDataClass.kycUrls,
         'groundServices': RegisterDataClass.groundServices,
         'groundImages': RegisterDataClass.groundUrls,
@@ -563,13 +574,6 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
         .collection("SportistanPartners")
         .doc(RegisterDataClass.groundID.toString())
         .set({
-      'Monday': [],
-      'Tuesday': [],
-      'Wednesday': [],
-      'Thursday': [],
-      'Friday': [],
-      'Saturday': [],
-      'Sunday': [],
       'MondayEntireDay': 0,
       'TuesdayEntireDay': 0,
       'WednesdayEntireDay': 0,
@@ -581,10 +585,10 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       'locationName': '',
       'isVerified': false,
       'groundType': '',
-      'isBadgeAllotted' : false,
-      'badges' : [],
-      'isAccountOnHold' : false,
-      'description' : '',
+      'isBadgeAllotted': false,
+      'badges': [],
+      'isAccountOnHold': false,
+      'description': '',
       'userID': '',
       'phoneNumber': _auth.currentUser!.phoneNumber,
       'kycStatus': 'Under Review',
@@ -593,6 +597,7 @@ class SlotAddSettingsState extends State<SlotAddSettings> {
       'groundID': '',
       'groundName': '',
       'profileImageLink': '',
+      'token': '',
       'sportistanCredit': 0,
       'isKYCPending': true,
       'kycImageLinks': [],
@@ -613,7 +618,11 @@ class Entry {
   final String email;
   final String email2;
 
-  Entry({required this.name, required this.name2, required this.email, required this.email2});
+  Entry(
+      {required this.name,
+      required this.name2,
+      required this.email,
+      required this.email2});
 }
 
 class DataSave {
@@ -661,17 +670,28 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         body: SafeArea(
             child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(children: [
-                  const Text("Final Step",style: TextStyle(fontFamily: "Nunito",fontSize: 22,fontWeight: FontWeight.bold)),
-                  const Text("Set Entire Day Price",style: TextStyle(fontFamily: "DMSans",fontSize: 22,),),
-                      Column(
-                        children: [
-                          Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Form(
+                  const Text("Final Step",
+                      style: TextStyle(
+                          fontFamily: "Nunito",
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Set Entire Day Price",
+                    style: TextStyle(
+                      fontFamily: "DMSans",
+                      fontSize: 22,
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Form(
                             key: mondayKey,
                             child: TextFormField(
                               controller: mondayController,
@@ -682,14 +702,11 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                                   return null;
                                 }
                               },
-
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
                               ],
                               decoration: const InputDecoration(
-
-
                                   hintText: "Enter Monday Entire Day Price",
                                   label: Text("Monday"),
                                   fillColor: Colors.white,
@@ -698,19 +715,25 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                                     borderSide: BorderSide.none,
                                   )),
                             )),
-                                            ),
-                          TextButton(onPressed: (){
-                            if(mondayKey.currentState!.validate()){
-                              tuesdayController.text = mondayController.value.text;
-                              wednesdayController.text = mondayController.value.text;
-                              thursdayController.text = mondayController.value.text;
-                              fridayController.text = mondayController.value.text;
-                              fridayController.text = mondayController.value.text;
-                            }
-
-                          }, child: const Text("Copy As Above Price"))
-                        ],
                       ),
+                      TextButton(
+                          onPressed: () {
+                            if (mondayKey.currentState!.validate()) {
+                              tuesdayController.text =
+                                  mondayController.value.text;
+                              wednesdayController.text =
+                                  mondayController.value.text;
+                              thursdayController.text =
+                                  mondayController.value.text;
+                              fridayController.text =
+                                  mondayController.value.text;
+                              fridayController.text =
+                                  mondayController.value.text;
+                            }
+                          },
+                          child: const Text("Copy As Above Price"))
+                    ],
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Form(
@@ -729,7 +752,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Tuesday Entire Day Price",
                               label: Text("Tuesday"),
                               fillColor: Colors.white,
@@ -757,7 +779,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Wednesday Entire Day Price",
                               label: Text("Wednesday"),
                               fillColor: Colors.white,
@@ -785,7 +806,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Thursday Entire Day Price",
                               label: Text("Thursday"),
                               fillColor: Colors.white,
@@ -813,7 +833,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Friday Entire Day Price",
                               label: Text("Friday"),
                               fillColor: Colors.white,
@@ -841,7 +860,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Saturday Entire Day Price",
                               label: Text("Saturday"),
                               fillColor: Colors.white,
@@ -869,7 +887,6 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                             FilteringTextInputFormatter.digitsOnly
                           ],
                           decoration: const InputDecoration(
-
                               hintText: "Enter Sunday Entire Day Price",
                               label: Text("Sunday"),
                               fillColor: Colors.white,
@@ -885,32 +902,39 @@ class _EntireDaySlotSettingsState extends State<EntireDaySlotSettings> {
                         color: Colors.green,
                         onPressed: () async {
                           if (mondayKey.currentState!.validate() &
-                          tuesdayKey.currentState!.validate() &
-                          wednesdayKey.currentState!.validate() &
-                          thursdayKey.currentState!.validate() &
-                          fridayKey.currentState!.validate() &
-                          saturdayKey.currentState!.validate() &
-                          sundayKey.currentState!.validate()) {
+                              tuesdayKey.currentState!.validate() &
+                              wednesdayKey.currentState!.validate() &
+                              thursdayKey.currentState!.validate() &
+                              fridayKey.currentState!.validate() &
+                              saturdayKey.currentState!.validate() &
+                              sundayKey.currentState!.validate()) {
                             await _server
                                 .collection("SportistanPartners")
                                 .doc(RegisterDataClass.groundID.toString())
                                 .update({
                               'MondayEntireDay':
-                              mondayController.value.text.trim().toString(),
-                              'TuesdayEntireDay':
-                              tuesdayController.value.text.trim().toString(),
-                              'WednesdayEntireDay':
-                              wednesdayController.value.text.trim().toString(),
-                              'ThursdayEntireDay':
-                              thursdayController.value.text.trim().toString(),
+                                  mondayController.value.text.trim().toString(),
+                              'TuesdayEntireDay': tuesdayController.value.text
+                                  .trim()
+                                  .toString(),
+                              'WednesdayEntireDay': wednesdayController
+                                  .value.text
+                                  .trim()
+                                  .toString(),
+                              'ThursdayEntireDay': thursdayController.value.text
+                                  .trim()
+                                  .toString(),
                               'FridayEntireDay':
-                              fridayController.value.text.trim().toString(),
-                              'SaturdayEntireDay':
-                              saturdayController.value.text.trim().toString(),
+                                  fridayController.value.text.trim().toString(),
+                              'SaturdayEntireDay': saturdayController.value.text
+                                  .trim()
+                                  .toString(),
                               'SundayEntireDay':
-                              sundayController.value.text.trim().toString(),
-                            }).then((value) =>
-                            {PageRouter.pushRemoveUntil(context, const NavHome())});
+                                  sundayController.value.text.trim().toString(),
+                            }).then((value) => {
+                                      PageRouter.pushRemoveUntil(
+                                          context, const NavHome())
+                                    });
                           }
                         },
                         child: const Text("Finish Setup")),

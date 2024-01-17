@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:chips_choice/chips_choice.dart';
 import 'package:delayed_display/delayed_display.dart';
@@ -22,8 +21,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
   TextEditingController groundController = TextEditingController();
   GlobalKey<FormState> groundKey = GlobalKey<FormState>();
   GlobalKey<FormState> nameKey = GlobalKey<FormState>();
-
-
 
   @override
   void dispose() {
@@ -53,6 +50,23 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+          elevation: 0,
+          title: const Text('Back'),
+          backgroundColor: Colors.orange.shade50,
+          foregroundColor: Colors.black,
+          actions: [
+            RegisterDataClass.kycImages.isNotEmpty
+                ? IconButton(
+                    onPressed: () {
+                      RegisterDataClass.groundName =
+                          groundController.value.text;
+                      RegisterDataClass.personName = nameController.value.text;
+                      setSlots();
+                    },
+                    icon: const Icon(Icons.arrow_forward_ios_sharp))
+                : Container()
+          ]),
       backgroundColor: Colors.orange.shade50,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
@@ -90,7 +104,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     style: const TextStyle(color: Colors.black87),
                     controller: nameController,
                     keyboardType: TextInputType.name,
-
                     decoration: InputDecoration(
                         errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Owner Name as Per Documents",
@@ -121,7 +134,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                     style: const TextStyle(color: Colors.black87),
                     controller: groundController,
                     keyboardType: TextInputType.name,
-
                     decoration: InputDecoration(
                         errorStyle: const TextStyle(color: Colors.red),
                         hintText: "Ground Name",
@@ -212,8 +224,9 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                       ],
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        RegisterDataClass.kycImages.isNotEmpty ? Container() :
                         MaterialButton(
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30)),
@@ -236,15 +249,19 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                                 child: const Text("Set Slots",
                                     style: TextStyle(color: Colors.white)),
                                 onPressed: () async {
-                                  RegisterDataClass.groundName = groundController.value.text;
-                                  RegisterDataClass.personName = nameController.value.text;
+                                  RegisterDataClass.groundName =
+                                      groundController.value.text;
+                                  RegisterDataClass.personName =
+                                      nameController.value.text;
                                   setSlots();
                                 })
-                         : Padding(
-                           padding: const EdgeInsets.all(8.0),
-                           child: const Text('Images Not Selected',style: TextStyle(fontFamily: "DMSans",color: Colors.red)),
-                         ),
-
+                            : const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('Images Not Selected',
+                                    style: TextStyle(
+                                        fontFamily: "DMSans",
+                                        color: Colors.red)),
+                              ),
                       ],
                     ),
                     ListView.builder(
@@ -254,12 +271,14 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
                       itemBuilder: (context, index) {
                         return RegisterDataClass.kycImages.isNotEmpty
                             ? ListTile(
-                                title: Text(RegisterDataClass.kycImages[index].name.toString()),
+                                title: Text(RegisterDataClass
+                                    .kycImages[index].name
+                                    .toString()),
                                 leading: SizedBox(
                                     height:
                                         MediaQuery.of(context).size.height / 25,
-                                    child:
-                                        Image.file(File(RegisterDataClass.kycImages[index].path))),
+                                    child: Image.file(File(RegisterDataClass
+                                        .kycImages[index].path))),
                                 onTap: () async {
                                   setState(() {
                                     RegisterDataClass.kycImages.removeAt(index);
@@ -281,7 +300,6 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
     );
   }
 
-
   uploadImages() async {
     final ImagePicker picker = ImagePicker();
     RegisterDataClass.kycImages = await picker.pickMultiImage(
@@ -294,7 +312,7 @@ class _GroundDetailsRegisterState extends State<GroundDetailsRegister> {
 
   void setSlots() {
     RegisterDataClass.groundID = UniqueID.generateRandomString();
-    RegisterDataClass.sportsTag =  sportTags.toString();
+    RegisterDataClass.sportsTag = sportTags.toString();
     PageRouter.push(context, const SlotSettings());
   }
 }

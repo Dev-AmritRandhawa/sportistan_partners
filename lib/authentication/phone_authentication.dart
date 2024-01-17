@@ -64,8 +64,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
     serverClientId:
         "497512590176-k2357th2q9rkmq4484uhmu4lqvmivi50.apps.googleusercontent.com",
   );
-  final Uri toLaunch = Uri(
-      scheme: 'https', host: 'www.sportistan.co.in');
+  final Uri toLaunch = Uri(scheme: 'https', host: 'www.sportistan.co.in');
 
   @override
   void dispose() {
@@ -228,7 +227,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     } else {
                                       return null;
                                     }
-                                  },maxLength: 10,
+                                  },
+                                  maxLength: 10,
                                   controller: numberController,
                                   onChanged: (data) {
                                     numberKey.currentState!.validate();
@@ -346,7 +346,6 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     padding: const EdgeInsets.all(8.0),
                                     child: CupertinoButton(
                                       onPressed: () async {
-
                                         if (numberKey.currentState!
                                             .validate()) {
                                           try {
@@ -397,49 +396,83 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                       ],
                     ),
                     ValueListenableBuilder(
-                      valueListenable: signInCheck,
-                      builder: (context, value, child) {
+                      valueListenable: loading,
+                      builder: (BuildContext context, value, Widget? child) {
                         return value
-                            ? Column(
-                                children: [
-                                  const CircularProgressIndicator(
-                                      strokeWidth: 1, color: Colors.white),
-                                  CupertinoButton(
-                                      onPressed: () {
-                                        signInCheck.value = false;
-                                      },
-                                      child: const Text(
-                                        "Cancel",
-                                        style: TextStyle(color: Colors.white),
-                                      ))
-                                ],
-                              )
-                            : CupertinoButton(
-                                color: Colors.white,
-                                onPressed: () {
-                                  signInCheck.value = true;
-                                  handleSignIn();
+                            ? ValueListenableBuilder(
+                                valueListenable: signInCheck,
+                                builder: (context, value, child) {
+                                  return value
+                                      ? Column(
+                                          children: [
+                                            const CircularProgressIndicator(
+                                                strokeWidth: 1,
+                                                color: Colors.white),
+                                            CupertinoButton(
+                                                onPressed: () {
+                                                  signInCheck.value = false;
+                                                },
+                                                child: const Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ))
+                                          ],
+                                        )
+                                      : Column(
+                                          children: [
+                                            const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                  "Didn't Received OTP? Continue with Google",
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 18)),
+                                            ),
+                                            CupertinoButton(
+                                                color: Colors.white,
+                                                onPressed: () {
+                                                  signInCheck.value = true;
+                                                  handleSignIn();
+                                                },
+                                                child: SizedBox(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width /
+                                                      2,
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      const Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                right: 8.0),
+                                                        child: Text(
+                                                          "Continue with Google",
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.black,
+                                                              fontFamily:
+                                                                  "DMSans"),
+                                                        ),
+                                                      ),
+                                                      Image.asset(
+                                                          "assets/gicon.png",
+                                                          height: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .height /
+                                                              45)
+                                                    ],
+                                                  ),
+                                                )),
+                                          ],
+                                        );
                                 },
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width / 2,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      const Text(
-                                        "Continue with Google",
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontFamily: "DMSans"),
-                                      ),
-                                      Image.asset("assets/gicon.png",
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height /
-                                              45)
-                                    ],
-                                  ),
-                                ));
+                              )
+                            : Container();
                       },
                     ),
                     ValueListenableBuilder(
@@ -470,7 +503,6 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                             style: TextStyle(
                               fontFamily: "DMSans",
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
                               fontSize: MediaQuery.of(context).size.width / 28,
                             ),
                             children: [
@@ -631,7 +663,6 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
               else
                 {
                   await handleSignOut(),
-
                   signInCheck.value = false,
                   if (mounted)
                     {
@@ -652,7 +683,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                 padding: EdgeInsets.all(8.0),
                                 child: Text(
                                   "Use Phone Number to Create an Account Continue with Google service can use later in profile settings for faster login response",
-                                  style: TextStyle(fontFamily: "DMSans",fontSize: 18),
+                                  style: TextStyle(
+                                      fontFamily: "DMSans", fontSize: 18),
                                 ),
                               ),
                               Image.asset("assets/noResults.png"),
