@@ -8,6 +8,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
+import 'package:keyboard_actions/keyboard_actions_config.dart';
+import 'package:keyboard_actions/keyboard_actions_item.dart';
 import 'package:lottie/lottie.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
 import 'package:pinput/pinput.dart';
@@ -37,6 +40,9 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
   int resendOtpCounter = 0;
 
   GoogleSignInAccount? currentUser;
+
+  final _focusNode = FocusNode();
+  final _focusNodeOTP = FocusNode();
 
   Future<void> _launchInBrowser(Uri url) async {
     if (!await launchUrl(
@@ -103,19 +109,51 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
       controller.startTimer();
     });
   }
+  KeyboardActionsConfig _buildConfig(BuildContext context) {
+    return KeyboardActionsConfig(
+      keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+      keyboardBarColor: Colors.grey[200],
+      nextFocus: true,
+      actions: [
+        KeyboardActionsItem(
+          focusNode: _focusNode,
+        ),
+        KeyboardActionsItem(focusNode: _focusNode,  toolbarButtons: [
+              (node) {
+            return TextButton(onPressed: (){
+               node.unfocus();
+imageShow.value = true;
+            }, child: const Text('Close'));
+          }
+        ]),KeyboardActionsItem(
+          focusNode: _focusNodeOTP,
+        ),
+        KeyboardActionsItem(focusNode: _focusNodeOTP,  toolbarButtons: [
+              (node) {
+            return TextButton(onPressed: (){
+              imageShow.value = true;
 
+               node.unfocus();
+
+            }, child: const Text('Close'));
+          }
+        ]),
+
+      ],
+    );
+  }
   @override
   Widget build(BuildContext context) {
-    const focusedBorderColor = Colors.white;
-    const fillColor = Colors.white;
-    const borderColor = Colors.white;
+    const focusedBorderColor = Colors.black;
+    const fillColor = Colors.black;
+    const borderColor = Colors.black;
 
     final defaultPinTheme = PinTheme(
       width: MediaQuery.of(context).size.width / 10,
       height: MediaQuery.of(context).size.width / 10,
       textStyle: const TextStyle(
         fontSize: 22,
-        color: Colors.black,
+        color: Colors.white,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(19),
@@ -124,38 +162,29 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
     );
     return Scaffold(
         resizeToAvoidBottomInset: false,
-        body: DelayedDisplay(
+        body: KeyboardActions(
+        config: _buildConfig(context),
           child: SafeArea(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage("assets/permissionBackground.png"),
-                    fit: BoxFit.fill),
-              ),
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ValueListenableBuilder(
+                    valueListenable: imageShow,
+                    builder: (context, value, child) =>
+                    value ? Column(
                       children: [
-                        ValueListenableBuilder(
-                          valueListenable: imageShow,
-                          builder: (context, value, child) {
-                            return value
-                                ? Padding(
+                        Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: DelayedDisplay(
                                       child: Image.asset(
                                         "assets/logo.png",
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         height:
                                             MediaQuery.of(context).size.height /
                                                 10,
                                       ),
                                     ),
-                                  )
-                                : Container();
-                          },
-                        ),
+                                  ),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
@@ -166,8 +195,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                 style: TextStyle(
                                     fontFamily: "Nunito",
                                     fontSize:
-                                        MediaQuery.of(context).size.height / 20,
-                                    color: Colors.white),
+                                    MediaQuery.of(context).size.height / 20,
+                                    color: Colors.black),
                               ),
                               Container()
                             ],
@@ -184,8 +213,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                                     fontFamily: "DMSans",
                                     fontWeight: FontWeight.bold,
                                     fontSize:
-                                        MediaQuery.of(context).size.height / 10,
-                                    color: Colors.white),
+                                    MediaQuery.of(context).size.height / 10,
+                                    color: Colors.black),
                               ),
                               SizedBox(
                                 height: MediaQuery.of(context).size.height / 10,
@@ -202,353 +231,372 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication>
                             ],
                           ),
                         ),
+            
                       ],
-                    ),
-                    Column(
-                      children: [
-                        ValueListenableBuilder(
-                          valueListenable: loading,
-                          builder:
-                              (BuildContext context, value, Widget? child) {
-                            return SizedBox(
-                              width: MediaQuery.of(context).size.width / 1.2,
-                              child: Form(
-                                key: numberKey,
-                                child: TextFormField(
-                                  onTap: () {
-                                    imageShow.value = false;
-                                  },
-                                  readOnly: loading.value,
-                                  validator: (value) {
-                                    if (value!.isEmpty) {
-                                      return "Number required.";
-                                    } else if (value.length <= 9) {
-                                      return "Enter 10 digits.";
-                                    } else {
-                                      return null;
-                                    }
-                                  },
-                                  maxLength: 10,
-                                  controller: numberController,
-                                  onChanged: (data) {
-                                    numberKey.currentState!.validate();
-                                  },
-                                  keyboardType: TextInputType.phone,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly
-                                  ],
-                                  autofillHints: const [
-                                    AutofillHints.telephoneNumberLocal
-                                  ],
-                                  decoration: InputDecoration(
-                                      suffixIcon: InkWell(
-                                          onTap: () {
-                                            loading.value = false;
-                                            otpController.clear();
-                                            numberController.clear();
-                                          },
-                                          child: const Icon(Icons.edit)),
-                                      fillColor: Colors.white,
-                                      border: const OutlineInputBorder(),
-                                      errorStyle:
-                                          const TextStyle(color: Colors.white),
-                                      filled: true,
-                                      prefixIcon: CountryCodePicker(
-                                        showCountryOnly: true,
-                                        onChanged: (value) {
-                                          countryCode =
-                                              value.dialCode.toString();
-                                        },
-                                        favorite: const ["IN"],
-                                        initialSelection: "IN",
-                                      ),
-                                      hintText: "Phone Number",
-                                      hintStyle:
-                                          const TextStyle(color: Colors.black),
-                                      labelStyle:
-                                          const TextStyle(color: Colors.black)),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        ValueListenableBuilder(
-                          valueListenable: loading,
-                          builder: (context, value, child) {
-                            return value
-                                ? Padding(
-                                    padding: EdgeInsets.all(
-                                        MediaQuery.of(context).size.width / 25),
-                                    child: Pinput(
-                                      controller: otpController,
-                                      androidSmsAutofillMethod:
-                                          AndroidSmsAutofillMethod
-                                              .smsUserConsentApi,
-                                      listenForMultipleSmsOnAndroid: true,
-                                      defaultPinTheme: defaultPinTheme,
-                                      length: 6,
-                                      separatorBuilder: (index) =>
-                                          const SizedBox(width: 8),
-                                      hapticFeedbackType:
-                                          HapticFeedbackType.lightImpact,
-                                      onCompleted: (pin) {
-                                        _manualVerify(pin);
-                                      },
-                                      cursor: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Container(
-                                            margin: const EdgeInsets.only(
-                                                bottom: 9),
-                                            width: 22,
-                                            height: 1,
-                                            color: focusedBorderColor,
-                                          ),
-                                        ],
-                                      ),
-                                      focusedPinTheme: defaultPinTheme.copyWith(
-                                        decoration: defaultPinTheme.decoration!
-                                            .copyWith(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          border: Border.all(
-                                              color: focusedBorderColor),
-                                        ),
-                                      ),
-                                      submittedPinTheme:
-                                          defaultPinTheme.copyWith(
-                                        decoration: defaultPinTheme.decoration!
-                                            .copyWith(
-                                          color: fillColor,
-                                          borderRadius:
-                                              BorderRadius.circular(19),
-                                          border: Border.all(
-                                              color: focusedBorderColor),
-                                        ),
-                                      ),
-                                      errorPinTheme:
-                                          defaultPinTheme.copyBorderWith(
-                                        border:
-                                            Border.all(color: Colors.redAccent),
-                                      ),
-                                    ),
-                                  )
-                                : Container();
-                          },
-                        ),
-                        ValueListenableBuilder(
-                          builder:
-                              (BuildContext context, value, Widget? child) {
-                            return value
-                                ? Container()
-                                : Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: CupertinoButton(
-                                      onPressed: () async {
-                                        if (numberKey.currentState!
-                                            .validate()) {
-                                          try {
-                                            loading.value = true;
-                                            await _verifyByNumber(
-                                                countryCode,
-                                                numberController.value.text
-                                                    .toString());
-                                          } on FirebaseAuthException catch (e) {
-                                            _showError(e.message.toString());
-                                          }
-                                        }
-                                      },
-                                      color: Colors.green,
-                                      child: const Text(
-                                        "Send OTP",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  );
-                          },
-                          valueListenable: loading,
-                        ),
-                        ValueListenableBuilder(
-                          valueListenable: loading,
-                          builder: (BuildContext context, bool value,
-                              Widget? child) {
-                            return value
-                                ? SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width / 2,
-                                    child: OtpTimerButton(
-                                      buttonType: ButtonType.text_button,
-                                      controller: controller,
-                                      onPressed: () {
-                                        requestOtp();
-                                      },
-                                      text: const Text('Resend OTP',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontFamily: "DMSans")),
-                                      duration: 30,
-                                    ),
-                                  )
-                                : Container();
-                          },
-                        ),
-                      ],
-                    ),
-                    ValueListenableBuilder(
-                      valueListenable: loading,
-                      builder: (BuildContext context, value, Widget? child) {
-                        return value
-                            ? ValueListenableBuilder(
-                                valueListenable: signInCheck,
-                                builder: (context, value, child) {
-                                  return value
-                                      ? Column(
-                                          children: [
-                                            const CircularProgressIndicator(
-                                                strokeWidth: 1,
-                                                color: Colors.white),
-                                            CupertinoButton(
-                                                onPressed: () {
-                                                  signInCheck.value = false;
-                                                },
-                                                child: const Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ))
-                                          ],
-                                        )
-                                      : Column(
-                                          children: [
-                                            const Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                  "Didn't Received OTP? Continue with Google",
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 18)),
-                                            ),
-                                            CupertinoButton(
-                                                color: Colors.white,
-                                                onPressed: () {
-                                                  signInCheck.value = true;
-                                                  handleSignIn();
-                                                },
-                                                child: SizedBox(
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                      2,
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      const Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                right: 8.0),
-                                                        child: Text(
-                                                          "Continue with Google",
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.black,
-                                                              fontFamily:
-                                                                  "DMSans"),
-                                                        ),
-                                                      ),
-                                                      Image.asset(
-                                                          "assets/gicon.png",
-                                                          height: MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .height /
-                                                              45)
-                                                    ],
-                                                  ),
-                                                )),
-                                          ],
-                                        );
+                    ): Container(),
+                  ),
+                  Column(
+                    children: [
+                      ValueListenableBuilder(
+                        valueListenable: loading,
+                        builder:
+                            (BuildContext context, value, Widget? child) {
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width / 1.2,
+                            child: Form(
+                              key: numberKey,
+                              child: TextFormField(
+                                onTap: () {
+                                  imageShow.value = false;
                                 },
-                              )
-                            : Container();
-                      },
-                    ),
-                    ValueListenableBuilder(
-                      valueListenable: buttonDisable,
-                      builder: (context, value, child) {
-                        return value
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              )
-                            : Container();
-                      },
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).size.width / 8,
-                          left: MediaQuery.of(context).size.width / 30,
-                          right: MediaQuery.of(context).size.width / 30),
-                      child: GestureDetector(
-                        onTap: () async {
-                          Platform.isIOS
-                              ? _launchUniversalLinkIos(toLaunch)
-                              : _launchInBrowser(toLaunch);
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: 'By pressing continue, you agree to our ',
-                            style: TextStyle(
-                              fontFamily: "DMSans",
-                              color: Colors.white,
-                              fontSize: MediaQuery.of(context).size.width / 28,
+                                readOnly: loading.value,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Number required.";
+                                  } else if (value.length <= 9) {
+                                    return "Enter 10 digits.";
+                                  } else {
+                                    return null;
+                                  }
+                                },
+                                maxLength: 10,
+                                controller: numberController,
+                                onChanged: (data) {
+                                  numberKey.currentState!.validate();
+                                },
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly
+                                ],
+                                autofillHints: const [
+                                  AutofillHints.telephoneNumberLocal
+                                ],focusNode: _focusNode,
+                                decoration: InputDecoration(
+                                    suffixIcon: InkWell(
+                                        onTap: () {
+                                          loading.value = false;
+                                          otpController.clear();
+                                          numberController.clear();
+                                        },
+                                        child: const Icon(Icons.edit)),
+                                    fillColor: Colors.white,
+                                    border: const OutlineInputBorder(),
+                                    errorStyle:
+                                        const TextStyle(color: Colors.white),
+                                    filled: true,
+                                    prefixIcon: CountryCodePicker(
+                                      showCountryOnly: true,
+                                      onChanged: (value) {
+                                        countryCode =
+                                            value.dialCode.toString();
+                                      },
+                                      favorite: const ["IN"],
+                                      initialSelection: "IN",
+                                    ),
+                                    hintText: "Phone Number",
+                                    hintStyle:
+                                        const TextStyle(color: Colors.black),
+                                    labelStyle:
+                                        const TextStyle(color: Colors.black)),
+                              ),
                             ),
-                            children: [
-                              TextSpan(
-                                text: 'Terms,',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: "DMSans",
-                                  fontSize:
-                                      MediaQuery.of(context).size.width / 30,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' Privacy Policy',
-                                style: TextStyle(
-                                  fontFamily: "DMSans",
-                                  color: Colors.white,
-                                  fontSize:
-                                      MediaQuery.of(context).size.width / 30,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' and ',
-                                style: TextStyle(
-                                  fontFamily: "DMSans",
-                                  color: Colors.white,
-                                  fontSize:
-                                      MediaQuery.of(context).size.width / 30,
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'Cookies Policy',
-                                style: TextStyle(
-                                  fontFamily: "DMSans",
-                                  color: Colors.white,
-                                  fontSize:
-                                      MediaQuery.of(context).size.width / 30,
-                                ),
-                              ),
-                            ],
+                          );
+                        },
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: loading,
+                        builder: (context, value, child) {
+                          return value
+                              ? Padding(
+                                  padding: EdgeInsets.all(
+                                      MediaQuery.of(context).size.width / 25),
+                                  child: Pinput(
+                                    focusNode: _focusNodeOTP,
+                                    controller: otpController,
+                                    androidSmsAutofillMethod:
+                                        AndroidSmsAutofillMethod
+                                            .smsUserConsentApi,
+                                    listenForMultipleSmsOnAndroid: true,
+                                    defaultPinTheme: defaultPinTheme,
+                                    length: 6,
+                                    separatorBuilder: (index) =>
+                                        const SizedBox(width: 8),
+                                    hapticFeedbackType:
+                                        HapticFeedbackType.lightImpact,
+                                    onCompleted: (pin) {
+                                      _manualVerify(pin);
+                                    },
+                                    cursor: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.only(
+                                              bottom: 9),
+                                          width: 22,
+                                          height: 1,
+                                          color: focusedBorderColor,
+                                        ),
+                                      ],
+                                    ),
+                                    focusedPinTheme: defaultPinTheme.copyWith(
+                                      decoration: defaultPinTheme.decoration!
+                                          .copyWith(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                        border: Border.all(
+                                            color: focusedBorderColor),
+                                      ),
+                                    ),
+                                    submittedPinTheme:
+                                        defaultPinTheme.copyWith(
+                                      decoration: defaultPinTheme.decoration!
+                                          .copyWith(
+                                        color: fillColor,
+                                        borderRadius:
+                                            BorderRadius.circular(19),
+                                        border: Border.all(
+                                            color: focusedBorderColor),
+                                      ),
+                                    ),
+                                    errorPinTheme:
+                                        defaultPinTheme.copyBorderWith(
+                                      border:
+                                          Border.all(color: Colors.redAccent),
+                                    ),
+                                  ),
+                                )
+                              : Container();
+                        },
+                      ),
+                      ValueListenableBuilder(
+                        builder:
+                            (BuildContext context, value, Widget? child) {
+                          return value
+                              ? Container()
+                              : Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CupertinoButton(
+                                    onPressed: () async {
+                                      if (numberKey.currentState!
+                                          .validate()) {
+                                        imageShow.value = true;
+                                         _focusNode.unfocus();
+            
+            
+                                        try {
+                                          loading.value = true;
+                                          await _verifyByNumber(
+                                              countryCode,
+                                              numberController.value.text
+                                                  .toString());
+                                        } on FirebaseAuthException catch (e) {
+                                          _showError(e.message.toString());
+                                        }
+                                      }
+                                    },
+                                    color: Colors.green,
+                                    child: const Text(
+                                      "Send OTP",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                );
+                        },
+                        valueListenable: loading,
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: loading,
+                        builder: (BuildContext context, bool value,
+                            Widget? child) {
+                          return value
+                              ? SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width / 2,
+                                  child: OtpTimerButton(
+            
+                                    buttonType: ButtonType.outlined_button,
+                                    controller: controller,
+                                    onPressed: () {
+                                      requestOtp();
+                                    },
+                                    text: const Text('Resend OTP',
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontFamily: "DMSans")),
+                                    duration: 15,
+                                  ),
+                                )
+                              : Container();
+                        },
+                      ),
+                    ],
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: loading,
+                    builder: (BuildContext context, value, Widget? child) {
+                      return value
+                          ? ValueListenableBuilder(
+                              valueListenable: signInCheck,
+                              builder: (context, value, child) {
+                                return value
+                                    ? Column(
+                                        children: [
+                                          const CircularProgressIndicator(
+                                              strokeWidth: 1,
+                                              color: Colors.white),
+                                          CupertinoButton(
+                                              onPressed: () {
+                                                signInCheck.value = false;
+                                              },
+                                              child: const Text(
+                                                "Cancel",
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ))
+                                        ],
+                                      )
+                                    : Column(
+                                        children: [
+                                          const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text(
+                                                "Didn't Received OTP? Continue with Google",
+                                                style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontSize: 18)),
+                                          ),
+                                          MaterialButton(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              color: Colors.white,
+                                              onPressed: () {
+                                                signInCheck.value = true;
+                                                handleSignIn();
+                                              },
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width /
+                                                    2,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .center,
+                                                  children: [
+                                                    const Padding(
+                                                      padding:
+                                                          EdgeInsets.only(
+                                                              right: 8.0),
+                                                      child: Text(
+                                                        "Continue with Google",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.black,
+                                                            fontFamily:
+                                                                "DMSans"),
+                                                      ),
+                                                    ),
+                                                    Image.asset(
+                                                        "assets/gicon.png",
+                                                        height: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height /
+                                                            45)
+                                                  ],
+                                                ),
+                                              )),
+                                        ],
+                                      );
+                              },
+                            )
+                          : SizedBox(
+                        height: MediaQuery.of(context).size.height/6,
+                            child: Lottie.asset(
+                                                    'assets/phone_verification.json',
+                                                    controller: _controller,
+                                                    onLoaded: (composition) {
+                            _controller
+                              ..duration = composition.duration
+                              ..repeat();
+                                                    },
+                                                  ),
+                          );
+                    },
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: buttonDisable,
+                    builder: (context, value, child) {
+                      return value
+                          ? const CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2,
+                            )
+                          : Container();
+                    },
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).size.width / 8,
+                        left: MediaQuery.of(context).size.width / 30,
+                        right: MediaQuery.of(context).size.width / 30),
+                    child: GestureDetector(
+                      onTap: () async {
+                        Platform.isIOS
+                            ? _launchUniversalLinkIos(toLaunch)
+                            : _launchInBrowser(toLaunch);
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'By pressing continue, you agree to our ',
+                          style: TextStyle(
+                            fontFamily: "DMSans",
+                            color: Colors.black54,
+                            fontSize: MediaQuery.of(context).size.width / 28,
                           ),
+                          children: [
+                            TextSpan(
+                              text: 'Terms,',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontFamily: "DMSans",
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 30,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' Privacy Policy',
+                              style: TextStyle(
+                                fontFamily: "DMSans",
+                                color: Colors.blue,
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 30,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' and ',
+                              style: TextStyle(
+                                fontFamily: "DMSans",
+                                color: Colors.black54,
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 30,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Cookies Policy',
+                              style: TextStyle(
+                                fontFamily: "DMSans",
+                                color: Colors.black54,
+                                fontSize:
+                                    MediaQuery.of(context).size.width / 30,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ]),
-            ),
+                  ),
+                ]),
           ),
         ));
   }

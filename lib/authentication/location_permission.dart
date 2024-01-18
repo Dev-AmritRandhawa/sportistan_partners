@@ -118,7 +118,7 @@ class _CheckLocationPermissionState extends State<CheckLocationPermission>
                       "We need location permission to register your ground.",
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontFamily: "Nunito",
+                          fontFamily: "DMSans",
                           fontSize: MediaQuery.of(context).size.height / 30,
                           color: Colors.white),
                     ),
@@ -163,7 +163,8 @@ class _CheckLocationPermissionState extends State<CheckLocationPermission>
                       child: const Text(
                         "Allow Permission",
                         style: TextStyle(
-                            color: Colors.green,
+                            color: Colors.blueGrey,fontFamily: "DMSans",
+                            fontWeight: FontWeight.bold,
                             fontSize: 20,
                             ),
                       )),
@@ -173,7 +174,7 @@ class _CheckLocationPermissionState extends State<CheckLocationPermission>
                   "Important: If an app has permission to use your device's location, it can use your device's approximate location, precise location, or both.",
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontFamily: "Nunito",
+                      fontFamily: "DMSans",
                       fontSize: MediaQuery.of(context).size.height / 50,
                       color: Colors.white),
                 ),
