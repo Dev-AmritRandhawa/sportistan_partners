@@ -113,10 +113,6 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
                                   color: Colors.black87,
                                 )),
                             hintText: "Search location on Map",
-                            hintStyle: TextStyle(
-                                fontSize: MediaQuery.of(context).size.height / 40,
-                                color: Colors.black87,
-                                fontFamily: "Nunito"),
                             fillColor: Colors.white,
                             filled: true,
                             border: const OutlineInputBorder(
@@ -189,7 +185,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
                                                   ["main_text"]
                                               .toString(),
                                           style: const TextStyle(
-                                            fontFamily: "Nunito",
+                                            fontFamily: "DMSans",
                                             fontWeight: FontWeight.bold,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -297,7 +293,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
                     Text(
                       "Hold & drag marker to change location",
                       style: TextStyle(
-                        fontFamily: "Nunito",
+                        fontFamily: "DMSans",
                         fontSize: MediaQuery.of(context).size.width / 25,
                       ),
                     ),
@@ -323,7 +319,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
                                         fontSize:
                                             MediaQuery.of(context).size.width /
                                                 22,
-                                        fontFamily: "Nunito"),
+                                        fontFamily: "DMSans"),
                                   ),
                                 )
                               ],
@@ -366,7 +362,7 @@ class _SearchFieldState extends State<SearchField> with WidgetsBindingObserver {
               child: Text(
                 "Set Ground Location to Get Relevant result to users",
                 style: TextStyle(
-                    fontSize: 15, fontFamily: "Nunito", color: Colors.black54),
+                    fontSize: 15, fontFamily: "DMSans", color: Colors.black54),
               ),
             )
           ],

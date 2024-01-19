@@ -63,7 +63,7 @@ dependencies:
   flutter_phone_direct_caller: ^2.1.1
   collection: ^1.17.2
   fluttercontactpicker: ^4.7.0
-  image_picker: ^1.0.4
+  image_picker: ^1.0.7
   sliding_up_panel: ^2.0.0+1
   flutter_rating_bar: ^4.0.1
   otp_timer_button: ^1.1.0

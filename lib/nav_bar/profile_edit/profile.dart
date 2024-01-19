@@ -89,7 +89,7 @@ class _ProfileState extends State<Profile> {
       body: SlidingUpPanel(
         controller: pc,
         panelBuilder: (sc) => panel(sc),
-        maxHeight: MediaQuery.of(context).size.height / 2,
+        maxHeight: MediaQuery.of(context).size.height / 1.5,
         minHeight: 0,
         body: SafeArea(
             child: Center(
@@ -760,7 +760,7 @@ class _ProfileState extends State<Profile> {
     const String androidAppLink =
         'https://play.google.com/store/apps/details?id=co.in.sportistan.sportistan_partners';
     const String appleAppLink =
-        'https://play.google.com/store/apps/details?id=co.in.sportistan.sportistan_partners';
+        'https://apps.apple.com/us/app/sportistan-partners/id6476399003';
     if (Platform.isAndroid) {
       const String message =
           'Now You can also list your Facilities & get bookings and start earning: $androidAppLink';

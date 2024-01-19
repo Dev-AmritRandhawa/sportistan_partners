@@ -138,7 +138,7 @@ class _CropImageToolState extends State<CropImageTool> {
                             'userID': FirebaseAuth.instance.currentUser!.uid
                           }).then((value) => {
                                     setProfileLoader.value = true,
-                                    Navigator.pop(context)
+                                    if (mounted) {Navigator.pop(context)}
                                   })
                         }
                     })

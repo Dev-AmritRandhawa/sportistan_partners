@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -48,36 +50,40 @@ class _NavHomeState extends State<NavHome> {
   Widget build(BuildContext context) {
     return Scaffold(
 
-        bottomSheet: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: GNav(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-            activeColor: Colors.blueGrey.shade500,
-            iconSize: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            duration: const Duration(milliseconds: 200),
-            color: Colors.grey.shade500,
-            tabs: const [
-              GButton(
-                icon: Icons.home,
-                text: 'Home',
-              ),
-              GButton(
-                icon: Icons.library_books,
-                text: 'Bookings',
-              ),
-              GButton(
-                icon: Icons.person_rounded,
-                text: 'Profile',
-              ),
-            ],
-            selectedIndex: _selectedIndex,
-            onTabChange: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
+        bottomSheet: Container(
+          margin: Platform.isIOS
+              ?  EdgeInsets.only(bottom: MediaQuery.of(context).size.height/25)
+              : const EdgeInsets.all(0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GNav(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              activeColor: Colors.blueGrey.shade500,
+              iconSize: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              duration: const Duration(milliseconds: 200),
+              color: Colors.grey.shade500,
+              tabs: const [
+                GButton(
+                  icon: Icons.home,
+                  text: 'Home',
+                ),
+                GButton(
+                  icon: Icons.library_books,
+                  text: 'Bookings',
+                ),
+                GButton(
+                  icon: Icons.person_rounded,
+                  text: 'Profile',
+                ),
+              ],
+              selectedIndex: _selectedIndex,
+              onTabChange: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            ),
           ),
         ),
         body: _widgetOptions.elementAt(_selectedIndex));
