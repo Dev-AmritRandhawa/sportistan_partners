@@ -9,8 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
-import 'package:keyboard_actions/keyboard_actions_config.dart';
-import 'package:keyboard_actions/keyboard_actions_item.dart';
+
 import 'package:lottie/lottie.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
 import 'package:pinput/pinput.dart';
